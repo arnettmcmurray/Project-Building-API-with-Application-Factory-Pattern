@@ -1,6 +1,5 @@
 from app.extensions import db
 
-
 ticket_mechanics = db.Table(
     "ticket_mechanics",
     db.Column("ticket_id", db.Integer, db.ForeignKey("service_ticket.id"), primary_key=True),
@@ -11,6 +10,7 @@ class Mechanic(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     specialty = db.Column(db.String(100))
+    password = db.Column(db.String(128), nullable=False)
     tickets = db.relationship(
         "ServiceTicket",
         secondary=ticket_mechanics,
