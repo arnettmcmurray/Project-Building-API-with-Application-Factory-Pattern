@@ -19,3 +19,4 @@ def create_app(config_class=Config):
     app.register_blueprint(service_tickets_bp, url_prefix="/tickets")
 
     return app
+

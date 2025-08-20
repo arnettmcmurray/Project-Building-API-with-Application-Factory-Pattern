@@ -1,8 +1,7 @@
-# app/models.py
 from app.extensions import db
 from werkzeug.security import generate_password_hash, check_password_hash
 
-# --- association table ---
+# association table: ServiceTicket
 ticket_mechanics = db.Table(
     "ticket_mechanics",
     db.Column("ticket_id", db.Integer, db.ForeignKey("service_ticket.id"), primary_key=True),
@@ -13,10 +12,11 @@ class Mechanic(db.Model):
     __tablename__ = "mechanic"
 
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(255), unique=True, nullable=False)  # for login
+    email = db.Column(db.String(255), unique=True, nullable=False)
     name = db.Column(db.String(100), nullable=False)
     specialty = db.Column(db.String(100))
-    password = db.Column(db.String(255), nullable=False)  
+   
+    password = db.Column(db.String(255), nullable=False)
 
     tickets = db.relationship(
         "ServiceTicket",
@@ -24,7 +24,7 @@ class Mechanic(db.Model):
         back_populates="mechanics",
     )
 
-    # ---- password ----
+    # password
     def set_password(self, raw_password: str) -> None:
         self.password = generate_password_hash(raw_password)
 

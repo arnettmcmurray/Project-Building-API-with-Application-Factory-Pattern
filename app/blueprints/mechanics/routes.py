@@ -1,29 +1,29 @@
-
 from flask import request, jsonify, current_app
 from functools import wraps
 from datetime import datetime, timedelta, timezone
 
-from app.blueprints.mechanics import mechanics_bp
+from . import mechanics_bp
 from app.extensions import db
 from app.models import Mechanic, ServiceTicket, ticket_mechanics
 from app.blueprints.mechanics.schemas import mechanic_schema, mechanics_schema, login_schema
 
 from marshmallow import ValidationError
 from sqlalchemy.exc import IntegrityError
-from jose import jwt, JWTError  # python-jose
+from jose import jwt, JWTError
 
 
-# ---- token helpers (python-jose) ----
+# ---------------- JWT helper ----------------
 def encode_token(mechanic_id: int) -> str:
     now = datetime.now(timezone.utc)
     payload = {
-        "sub": str(mechanic_id),                      
+        "sub": str(mechanic_id),                     # subject must be a string
         "iat": int(now.timestamp()),
-        "exp": int((now + timedelta(hours=1)).timestamp()),
+        "exp": int((now + timedelta(days=7)).timestamp()),
     }
     return jwt.encode(payload, current_app.config["SECRET_KEY"], algorithm="HS256")
 
 
+# --------------- token_required ---------------
 def token_required(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
@@ -46,17 +46,15 @@ def token_required(fn):
     return wrapper
 
 
-# ---- routes ----
-
-# create mechanic
+# ---------------- Mechanics routes ----------------
 @mechanics_bp.route("/", methods=["POST"])
 def create_mechanic():
     try:
-        mech = mechanic_schema.load(request.json)  # validate + build object
+        mech = mechanic_schema.load(request.json)
     except ValidationError as err:
         return jsonify({"errors": err.messages}), 400
 
-    # hash password
+
     if "password" in request.json:
         mech.set_password(request.json["password"])
 
@@ -70,14 +68,12 @@ def create_mechanic():
     return mechanic_schema.jsonify(mech), 201
 
 
-# get all mechanics
 @mechanics_bp.route("/", methods=["GET"])
 def get_mechanics():
     mechs = Mechanic.query.all()
-    return mechanics_schema.jsonify(mechs)
+    return mechanics_schema.jsonify(mechs), 200
 
 
-# login
 @mechanics_bp.route("/login", methods=["POST"])
 def login():
     try:
@@ -93,7 +89,7 @@ def login():
     return jsonify({"error": "Invalid email or password"}), 401
 
 
-# update mechanic (self-only)
+# ---- protected: update/delete self ----
 @mechanics_bp.route("/<int:id>", methods=["PUT"])
 @token_required
 def update_mechanic(id):
@@ -102,25 +98,16 @@ def update_mechanic(id):
 
     mech = Mechanic.query.get_or_404(id)
     data = request.json or {}
-
-    # allow name/specialty change; handle password reset if provided
     if "name" in data:
         mech.name = data["name"]
     if "specialty" in data:
         mech.specialty = data["specialty"]
     if "password" in data and data["password"]:
         mech.set_password(data["password"])
-
-    try:
-        db.session.commit()
-    except IntegrityError:
-        db.session.rollback()
-        return jsonify({"error": "Update failed"}), 400
-
+    db.session.commit()
     return mechanic_schema.jsonify(mech), 200
 
 
-# delete mechanic (self-only)
 @mechanics_bp.route("/<int:id>", methods=["DELETE"])
 @token_required
 def delete_mechanic(id):
@@ -133,7 +120,6 @@ def delete_mechanic(id):
     return jsonify({"message": f"Mechanic {id} deleted"}), 200
 
 
-# protected: get my tickets
 @mechanics_bp.route("/my-tickets", methods=["GET"])
 @token_required
 def my_tickets():
@@ -143,5 +129,11 @@ def my_tickets():
         .filter(ticket_mechanics.c.mechanic_id == mid)
         .all()
     )
-    data = [{"id": t.id, "description": t.description, "status": t.status} for t in tickets]
-    return jsonify(data), 200
+    return jsonify([
+        {"id": t.id, "description": t.description, "status": t.status}
+        for t in tickets
+    ]), 200
+
+@mechanics_bp.route("/ping", methods=["GET"])
+def ping():
+    return jsonify({"ok": True}), 200
