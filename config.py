@@ -1,6 +1,7 @@
 class Config:
     SQLALCHEMY_DATABASE_URI = "sqlite:///mechanic_shop.db"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SECRET_KEY = "supersecretkey123"  # change to any strong random string
 
     # Optional: rate limit + cache
     RATELIMIT_STORAGE_URI = "memory://"
