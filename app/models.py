@@ -44,3 +44,13 @@ class ServiceTicket(db.Model):
         secondary=ticket_mechanics,
         back_populates="tickets",
     )
+from app.extensions import db
+
+class Customer(db.Model):
+    __tablename__ = "customers"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    phone = db.Column(db.String(20), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    car = db.Column(db.String(100))
