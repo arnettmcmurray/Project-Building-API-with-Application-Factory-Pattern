@@ -1,6 +1,6 @@
 from app.extensions import ma
-from marshmallow import fields
 from app.models import ServiceTicket
+from marshmallow import fields
 
 class ServiceTicketSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
@@ -8,9 +8,10 @@ class ServiceTicketSchema(ma.SQLAlchemyAutoSchema):
         load_instance = True
         include_fk = True
 
-    description = fields.String(required=True)
-    status = fields.String(required=False)
+    id = fields.Int(dump_only=True)
+    description = fields.Str(required=True)
+    status = fields.Str(required=True)
 
-ticket_schema = ServiceTicketSchema()
-tickets_schema = ServiceTicketSchema(many=True)
+service_ticket_schema = ServiceTicketSchema()
+service_tickets_schema = ServiceTicketSchema(many=True)
 

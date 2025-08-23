@@ -1,22 +1,26 @@
 from flask import Flask
-from config import Config
-from app.extensions import db, migrate, ma
+from app.extensions import db, ma, migrate
 
-def create_app(config_class=Config):
+# blueprint imports
+from app.blueprints.mechanics import mechanics_bp
+from app.blueprints.service_tickets import service_tickets_bp
+from app.blueprints.customers.routes import customers_bp
+print("DEBUG >>> Customers BP loaded:", customers_bp)
+from app.blueprints.inventory import inventory_bp
+
+
+def create_app(config_class="config.Config"):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
-    # Init extensions
+    # init extensions
     db.init_app(app)
-    migrate.init_app(app, db)
     ma.init_app(app)
+    migrate.init_app(app, db)
 
-    from app import models  # important for migrations
-
-    from app.blueprints.mechanics import mechanics_bp
-    from app.blueprints.service_tickets import service_tickets_bp
-    app.register_blueprint(mechanics_bp, url_prefix="/mechanics")
-    app.register_blueprint(service_tickets_bp, url_prefix="/tickets")
-
+    app.register_blueprint(mechanics_bp)
+    app.register_blueprint(service_tickets_bp)
+    app.register_blueprint(customers_bp)
+    print("DEBUG >>> Customers BP registered:", app.blueprints.keys())
+    app.register_blueprint(inventory_bp, url_prefix="/parts")
     return app
-
