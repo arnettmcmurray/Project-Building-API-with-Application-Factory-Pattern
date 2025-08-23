@@ -1,7 +1,23 @@
-venv/
+# Python cache
 __pycache__/
 *.pyc
+*.pyo
+
+# Virtual environment
+venv/
+.env/
+
+# Database
 instance/
-*.sqlite3
 *.db
+
+# Migrations 
+migrations/versions/
+
+# IDE / OS files
+.vscode/
+.idea/
 .DS_Store
+
+# Flask specific
+*.log
