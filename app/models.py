@@ -1,6 +1,7 @@
 from app.extensions import db
 from sqlalchemy import ForeignKey, String, Float, Integer, Table, Column
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from werkzeug.security import generate_password_hash, check_password_hash
 
 # Junction table for mechanics <-> service tickets
 ticket_mechanics = Table(
@@ -18,26 +19,39 @@ ticket_mechanics = Table(
     )
 )
 
-# Mechanic model
+# === Mechanic model ===
 class Mechanic(db.Model):
     __tablename__ = "mechanic"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
+    email: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(200), nullable=False)
+    specialty: Mapped[str] = mapped_column(String(100), nullable=True)
 
     tickets = relationship("ServiceTicket", secondary=ticket_mechanics, back_populates="mechanics")
 
-# Customer model
+    # helpers for password handling
+    def set_password(self, password: str):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password: str) -> bool:
+        return check_password_hash(self.password_hash, password)
+
+
+# === Customer model ===
 class Customer(db.Model):
     __tablename__ = "customer"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     email: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
-
+    phone: Mapped[str] = mapped_column(String(20), nullable=True)
+    car: Mapped[str] = mapped_column(String(100), nullable=True)
     tickets = relationship("ServiceTicket", backref="customer", cascade="all, delete-orphan")
 
-# ServiceTicket model
+
+# === ServiceTicket model ===
 class ServiceTicket(db.Model):
     __tablename__ = "service_ticket"
 
@@ -49,15 +63,11 @@ class ServiceTicket(db.Model):
         ForeignKey("customer.id", name="fk_service_ticket_customer_id")
     )
 
-    mechanics = relationship(
-        "Mechanic",
-        secondary=ticket_mechanics,
-        back_populates="tickets"
-    )
-
+    mechanics = relationship("Mechanic", secondary=ticket_mechanics, back_populates="tickets")
     parts = relationship("ServiceTicketInventory", back_populates="ticket")
 
-# Inventory model
+
+# === Inventory model ===
 class Inventory(db.Model):
     __tablename__ = "inventory"
 
@@ -67,18 +77,19 @@ class Inventory(db.Model):
 
     tickets = relationship("ServiceTicketInventory", back_populates="part")
 
-# Junction model with quantity
+
+# === Junction model with quantity ===
 class ServiceTicketInventory(db.Model):
     __tablename__ = "service_ticket_inventory"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     service_ticket_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("service_ticket.id", name="fk_serviceticketinventory_ticket_id")
+        ForeignKey("service_ticket.id", name="fk_service_ticket_inventory_ticket_id")
     )
     inventory_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("inventory.id", name="fk_serviceticketinventory_inventory_id")
+        ForeignKey("inventory.id", name="fk_service_ticket_inventory_inventory_id")
     )
     quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 

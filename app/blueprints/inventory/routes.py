@@ -50,3 +50,4 @@ def delete_part(id):
     db.session.delete(part)
     db.session.commit()
     return jsonify({"msg": f"Part {id} deleted"})
+

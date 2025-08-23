@@ -10,3 +10,10 @@ class ServiceTicketInventorySchema(SQLAlchemyAutoSchema):
     class Meta:
         model = ServiceTicketInventory
         load_instance = True
+
+# for singular or lis
+inventory_schema = InventorySchema()
+inventories_schema = InventorySchema(many=True)
+
+service_ticket_inventory_schema = ServiceTicketInventorySchema()
+service_ticket_inventories_schema = ServiceTicketInventorySchema(many=True)

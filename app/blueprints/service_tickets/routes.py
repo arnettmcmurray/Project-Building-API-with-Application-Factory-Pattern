@@ -122,32 +122,43 @@ def remove_mechanic(ticket_id, mech_id):
 
     return service_ticket_schema.jsonify(ticket), 200
 
-# Homework addition
+# === Add multiple parts to a service ticket ===
 @service_tickets_bp.route("/<int:ticket_id>/parts", methods=["POST"])
-@limiter.limit("5 per minute")   # prevent bs + spamming
-def add_part_to_ticket(ticket_id):
-    data = request.get_json()
+@limiter.limit("5 per minute")  # prevent spamming
+def add_parts_to_ticket(ticket_id):
+    data = request.get_json() or {}
+    parts_data = data.get("parts", [])
 
-    # validate fields
-    part_id = data.get("part_id")
-    quantity = data.get("quantity", 1)
+    if not parts_data:
+        return jsonify({"error": "No parts provided"}), 400
 
-    if not part_id:
-        return jsonify({"error": "part_id is required"}), 400
-
-    # fetch ticket + part
     ticket = ServiceTicket.query.get_or_404(ticket_id)
-    part = Inventory.query.get_or_404(part_id)
+    added_parts = []
 
-    # create junction record
-    link = ServiceTicketInventory(
-        service_ticket_id=ticket.id,
-        inventory_id=part.id,
-        quantity=quantity
-    )
-    db.session.add(link)
+    for item in parts_data:
+        part_id = item.get("part_id")
+        quantity = item.get("quantity", 1)
+
+        if not part_id:
+            continue  # skip invalid entries
+
+        part = Inventory.query.get_or_404(part_id)
+
+        link = ServiceTicketInventory(
+            service_ticket_id=ticket.id,
+            inventory_id=part.id,
+            quantity=quantity
+        )
+        db.session.add(link)
+        added_parts.append(f"{quantity} x {part.name}")
+
     db.session.commit()
 
     return jsonify({
-        "message": f"Added {quantity} x {part.name} to Service Ticket {ticket.id}"
+        "message": f"Added parts to Service Ticket {ticket.id}",
+        "details": added_parts
     }), 201
+    
+
+
+    

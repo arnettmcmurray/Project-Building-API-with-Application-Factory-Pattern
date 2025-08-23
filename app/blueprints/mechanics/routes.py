@@ -86,12 +86,15 @@ def login():
     except ValidationError as err:
         return jsonify({"errors": err.messages}), 400
 
-    mech = Mechanic.query.filter_by(email=creds["email"]).first()
+    # look up by mechanic name
+    mech = Mechanic.query.filter_by(name=creds["name"]).first()
+
+    # check against plain-text password for now
     if mech and mech.check_password(creds["password"]):
         token = encode_token(mech.id)
         return jsonify({"token": token}), 200
 
-    return jsonify({"error": "Invalid email or password"}), 401
+    return jsonify({"error": "Invalid name or password"}), 401
 
 
 # ---- protected: update/delete self ----
