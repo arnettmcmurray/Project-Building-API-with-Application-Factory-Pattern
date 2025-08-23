@@ -1,10 +1,11 @@
 from flask import request, jsonify
-from app.blueprints.service_tickets import service_tickets_bp
 from app.extensions import db
 from app.models import ServiceTicket, Mechanic, ticket_mechanics
-from app.blueprints.service_tickets.schemas import ticket_schema, tickets_schema
+from .schemas import service_ticket_schema, service_tickets_schema
+from . import service_tickets_bp
+from marshmallow import ValidationError
 
-# reuse the decorator 
+# reuse decorator 
 from app.blueprints.mechanics.routes import token_required
 
 
@@ -14,30 +15,45 @@ from app.blueprints.mechanics.routes import token_required
 def create_ticket():
     data = request.get_json() or {}
     try:
-        ticket = ticket_schema.load(data)
+        ticket = service_ticket_schema.load(data)
     except Exception as err:
         return jsonify({"errors": getattr(err, "messages", str(err))}), 400
 
     db.session.add(ticket)
     db.session.commit()
-    return ticket_schema.jsonify(ticket), 201
+    return service_ticket_schema.jsonify(ticket), 201
 
 
-# List tickets
-@service_tickets_bp.route("/", methods=["GET"])
-@token_required
-def list_tickets():
-    tickets = ServiceTicket.query.all()
-    return tickets_schema.jsonify(tickets), 200
+# === HOMEWORK ADDITION: Paginated tickets ===
+@service_tickets_bp.route("/paginated", methods=["GET"])
+def get_paginated_tickets():
+    try:
+        page = int(request.args.get("page", 1))
+        per_page = int(request.args.get("per_page", 5))
+    except ValueError:
+        return jsonify({"error": "Invalid pagination parameters"}), 400
+
+    tickets_query = ServiceTicket.query.paginate(page=page, per_page=per_page, error_out=False)
+
+    return jsonify({
+    "tickets": service_tickets_schema.dump(tickets_query.items),
+    "total": tickets_query.total,
+    "page": tickets_query.page,
+    "pages": tickets_query.pages,
+}), 200
 
 
 # Get single ticket
 @service_tickets_bp.route("/<int:ticket_id>", methods=["GET"])
-@token_required
 def get_ticket(ticket_id):
     t = ServiceTicket.query.get_or_404(ticket_id)
-    return ticket_schema.jsonify(t), 200
+    return service_ticket_schema.jsonify(t), 200
 
+# Get all tickets
+@service_tickets_bp.route("/", methods=["GET"])
+def get_all_tickets():
+    tickets = ServiceTicket.query.all()
+    return service_tickets_schema.jsonify(tickets), 200
 
 # Update ticket
 @service_tickets_bp.route("/<int:ticket_id>", methods=["PUT"])
@@ -50,38 +66,58 @@ def update_ticket(ticket_id):
     if "status" in data:
         t.status = data["status"]
     db.session.commit()
-    return ticket_schema.jsonify(t), 200
-
+    return service_ticket_schema.jsonify(t), 200
 
 # Delete ticket
 @service_tickets_bp.route("/<int:ticket_id>", methods=["DELETE"])
 @token_required
 def delete_ticket(ticket_id):
     t = ServiceTicket.query.get_or_404(ticket_id)
+
+    # find logged-in mechanic
+    from app.models import Mechanic
+    mech = Mechanic.query.get(request.mechanic_id)
+
+    # if admin, allow delete
+    if mech and mech.specialty == "ADMIN":   
+        db.session.delete(t)
+        db.session.commit()
+        return jsonify({"message": f"Ticket {ticket_id} deleted by admin"}), 200
+
+    # must own ticket
+    if mech not in t.mechanics:
+        return jsonify({"error": "Forbidden: you can only delete your own tickets"}), 403
+
     db.session.delete(t)
     db.session.commit()
-    return jsonify({"message": f"ticket {ticket_id} deleted"}), 200
+    return jsonify({"message": f"Ticket {ticket_id} deleted"}), 200
 
 
-# Assign a mechanic to a ticket (many-to-many)
+# Assign a mechanic to a ticket
 @service_tickets_bp.route("/<int:ticket_id>/assign/<int:mech_id>", methods=["POST"])
-@token_required
 def assign_mechanic(ticket_id, mech_id):
-    t = ServiceTicket.query.get_or_404(ticket_id)
-    m = Mechanic.query.get_or_404(mech_id)
-    if m not in t.mechanics:
-        t.mechanics.append(m)
-        db.session.commit()
-    return ticket_schema.jsonify(t), 200
+    ticket = ServiceTicket.query.get_or_404(ticket_id)
+    mechanic = Mechanic.query.get_or_404(mech_id)
 
+    # Prevent doplicate assignment
+    if mechanic in ticket.mechanics:
+        return jsonify({"error": f"Mechanic {mech_id} already assigned to Ticket {ticket_id}"}), 400
+
+    ticket.mechanics.append(mechanic)
+    db.session.commit()
+
+    return service_ticket_schema.jsonify(ticket), 200
 
 # Remove a mechanic from a ticket
 @service_tickets_bp.route("/<int:ticket_id>/remove/<int:mech_id>", methods=["POST"])
-@token_required
 def remove_mechanic(ticket_id, mech_id):
-    t = ServiceTicket.query.get_or_404(ticket_id)
-    m = Mechanic.query.get_or_404(mech_id)
-    if m in t.mechanics:
-        t.mechanics.remove(m)
-        db.session.commit()
-    return ticket_schema.jsonify(t), 200
+    ticket = ServiceTicket.query.get_or_404(ticket_id)
+    mechanic = Mechanic.query.get_or_404(mech_id)
+
+    if mechanic not in ticket.mechanics:
+        return jsonify({"error": f"Mechanic {mech_id} not assigned to Ticket {ticket_id}"}), 400
+
+    ticket.mechanics.remove(mechanic)
+    db.session.commit()
+
+    return service_ticket_schema.jsonify(ticket), 200
