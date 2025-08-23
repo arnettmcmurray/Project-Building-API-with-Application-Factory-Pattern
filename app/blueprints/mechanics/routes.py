@@ -10,7 +10,12 @@ from app.blueprints.mechanics.schemas import mechanic_schema, mechanics_schema, 
 from marshmallow import ValidationError
 from sqlalchemy.exc import IntegrityError
 from jose import jwt, JWTError
+from sqlalchemy import func, desc
+from .schemas import mechanic_schema, mechanics_schema
 
+@mechanics_bp.route("/ping", methods=["GET"])
+def ping():
+    return jsonify({"ok": True}), 200
 
 # ---------------- JWT helper ----------------
 def encode_token(mechanic_id: int) -> str:
@@ -123,10 +128,15 @@ def delete_mechanic(id):
 @mechanics_bp.route("/my-tickets", methods=["GET"])
 @token_required
 def my_tickets():
-    mid = request.mechanic_id
+    # admin passes 
+    mech_id = request.args.get("mechanic_id") or (request.json.get("mechanic_id") if request.is_json else None)
+
+    if not mech_id:
+        mech_id = request.mechanic_id  
+
     tickets = (
         ServiceTicket.query.join(ticket_mechanics)
-        .filter(ticket_mechanics.c.mechanic_id == mid)
+        .filter(ticket_mechanics.c.mechanic_id == mech_id)
         .all()
     )
     return jsonify([
@@ -134,6 +144,55 @@ def my_tickets():
         for t in tickets
     ]), 200
 
-@mechanics_bp.route("/ping", methods=["GET"])
-def ping():
-    return jsonify({"ok": True}), 200
+# === HOMEWORK ADDITION: Mechanic(s) with most tickets ===
+@mechanics_bp.route("/top", methods=["GET"])
+@token_required
+def mechanic_with_most_tickets():
+    result = (
+        db.session.query(
+            Mechanic.id,
+            Mechanic.name,
+            Mechanic.email,
+            func.count(ticket_mechanics.c.ticket_id).label("ticket_count")
+        )
+        .join(ticket_mechanics, Mechanic.id == ticket_mechanics.c.mechanic_id)
+        .group_by(Mechanic.id)
+        .order_by(desc("ticket_count"))
+        .first()
+    )
+
+    if not result:
+        return jsonify({"message": "No mechanics found"}), 404
+
+    return jsonify({
+        "id": result.id,
+        "name": result.name,
+        "email": result.email,
+        "ticket_count": int(result.ticket_count)
+    }), 200
+
+@mechanics_bp.route("/ticket-count", methods=["GET"])
+@token_required
+def mechanics_by_ticket_count():
+    rows = (
+        db.session.query(
+            Mechanic.id,
+            Mechanic.name,
+            Mechanic.email,
+            func.count(ticket_mechanics.c.ticket_id).label("ticket_count")
+        )
+        .join(ticket_mechanics, Mechanic.id == ticket_mechanics.c.mechanic_id)
+        .group_by(Mechanic.id)
+        .order_by(desc("ticket_count"))
+        .all()
+    )
+
+    return jsonify([
+        {
+            "id": r.id,
+            "name": r.name,
+            "email": r.email,
+            "ticket_count": int(r.ticket_count)
+        }
+        for r in rows
+    ]), 200
