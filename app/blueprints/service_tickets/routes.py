@@ -1,6 +1,6 @@
 from flask import request, jsonify
-from app.extensions import db
-from app.models import ServiceTicket, Mechanic, ticket_mechanics
+from app.extensions import db, limiter, cache
+from app.models import ServiceTicket, Mechanic, ticket_mechanics, Inventory, ServiceTicketInventory
 from .schemas import service_ticket_schema, service_tickets_schema
 from . import service_tickets_bp
 from marshmallow import ValidationError
@@ -121,3 +121,33 @@ def remove_mechanic(ticket_id, mech_id):
     db.session.commit()
 
     return service_ticket_schema.jsonify(ticket), 200
+
+# Homework addition
+@service_tickets_bp.route("/<int:ticket_id>/parts", methods=["POST"])
+@limiter.limit("5 per minute")   # prevent bs + spamming
+def add_part_to_ticket(ticket_id):
+    data = request.get_json()
+
+    # validate fields
+    part_id = data.get("part_id")
+    quantity = data.get("quantity", 1)
+
+    if not part_id:
+        return jsonify({"error": "part_id is required"}), 400
+
+    # fetch ticket + part
+    ticket = ServiceTicket.query.get_or_404(ticket_id)
+    part = Inventory.query.get_or_404(part_id)
+
+    # create junction record
+    link = ServiceTicketInventory(
+        service_ticket_id=ticket.id,
+        inventory_id=part.id,
+        quantity=quantity
+    )
+    db.session.add(link)
+    db.session.commit()
+
+    return jsonify({
+        "message": f"Added {quantity} x {part.name} to Service Ticket {ticket.id}"
+    }), 201

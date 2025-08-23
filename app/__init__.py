@@ -1,5 +1,6 @@
 from flask import Flask
-from app.extensions import db, ma, migrate
+from app.extensions import db, ma, migrate, limiter, cache
+
 
 # blueprint imports
 from app.blueprints.mechanics import mechanics_bp
@@ -17,6 +18,8 @@ def create_app(config_class="config.Config"):
     db.init_app(app)
     ma.init_app(app)
     migrate.init_app(app, db)
+    limiter.init_app(app)
+    cache.init_app(app)
 
     app.register_blueprint(mechanics_bp)
     app.register_blueprint(service_tickets_bp)
