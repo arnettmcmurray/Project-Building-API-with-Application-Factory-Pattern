@@ -1,56 +1,37 @@
 from app.extensions import db
-from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy import ForeignKey, String, Float, Integer
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-# association table: ServiceTicket
-ticket_mechanics = db.Table(
-    "ticket_mechanics",
-    db.Column("ticket_id", db.Integer, db.ForeignKey("service_ticket.id"), primary_key=True),
-    db.Column("mechanic_id", db.Integer, db.ForeignKey("mechanic.id"), primary_key=True),
-)
-
-class Mechanic(db.Model):
-    __tablename__ = "mechanic"
-
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(255), unique=True, nullable=False)
-    name = db.Column(db.String(100), nullable=False)
-    specialty = db.Column(db.String(100))
-   
-    password = db.Column(db.String(255), nullable=False)
-
-    tickets = db.relationship(
-        "ServiceTicket",
-        secondary=ticket_mechanics,
-        back_populates="mechanics",
-    )
-
-    # password
-    def set_password(self, raw_password: str) -> None:
-        self.password = generate_password_hash(raw_password)
-
-    def check_password(self, raw_password: str) -> bool:
-        return check_password_hash(self.password, raw_password)
-
-
+# === ServiceTicket model  ===
 class ServiceTicket(db.Model):
     __tablename__ = "service_ticket"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    description: Mapped[str] = mapped_column(String(200), nullable=False)
+    date: Mapped[str] = mapped_column(String(50), nullable=False)
+    customer_id: Mapped[int] = mapped_column(ForeignKey("customer.id"))
+    parts = relationship("ServiceTicketInventory", back_populates="ticket")
+mechanics = relationship("Mechanic", secondary="service_mechanic", back_populates="tickets")
 
-    id = db.Column(db.Integer, primary_key=True)
-    description = db.Column(db.String(255), nullable=False)
-    status = db.Column(db.String(50), default="open")
 
-    mechanics = db.relationship(
-        "Mechanic",
-        secondary=ticket_mechanics,
-        back_populates="tickets",
-    )
-from app.extensions import db
+# === Inventory model ===
+class Inventory(db.Model):
+    __tablename__ = "inventory"
 
-class Customer(db.Model):
-    __tablename__ = "customers"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    price: Mapped[float] = mapped_column(Float, nullable=False)
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    phone = db.Column(db.String(20), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    car = db.Column(db.String(100))
+    tickets = relationship("ServiceTicketInventory", back_populates="part")
+
+
+# === Junction model ===
+class ServiceTicketInventory(db.Model):
+    __tablename__ = "service_ticket_inventory"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    service_ticket_id: Mapped[int] = mapped_column(ForeignKey("service_ticket.id"))
+    inventory_id: Mapped[int] = mapped_column(ForeignKey("inventory.id"))
+    quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+    ticket = relationship("ServiceTicket", back_populates="parts")
+    part = relationship("Inventory", back_populates="tickets")
