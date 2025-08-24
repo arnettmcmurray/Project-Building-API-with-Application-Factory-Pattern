@@ -1,7 +1,7 @@
 from flask import request, jsonify, current_app
 
 from . import mechanics_bp
-from app.extensions import db
+from app.extensions import db, Limiter
 from app.models import Mechanic, ServiceTicket, ticket_mechanics
 from app.blueprints.mechanics.schemas import mechanic_schema, mechanics_schema, login_schema
 
@@ -46,6 +46,7 @@ def get_mechanics():
 
 
 @mechanics_bp.route("/login", methods=["POST"])
+@limiter.limit("5 per minute")
 def login():
     try:
         creds = login_schema.load(request.json)

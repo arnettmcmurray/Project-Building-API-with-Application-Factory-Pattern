@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from app.extensions import db
+from app.extensions import db, Cache
 from app.models import Customer
 from app.blueprints.mechanics.routes import token_required
 from .schemas import customer_schema, customers_schema
@@ -45,9 +45,11 @@ def search_customer_by_email():
 # === Get all customers ===
 @customers_bp.route("/", methods=["GET"])
 @token_required
+@cache.cached(timeout=60)   # cache results for 60 seconds
 def get_customers():
     customers = Customer.query.all()
     return customers_schema.jsonify(customers), 200
+
 
 
 # === Update a customer ===
