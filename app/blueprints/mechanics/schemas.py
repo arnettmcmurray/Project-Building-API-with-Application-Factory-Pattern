@@ -2,18 +2,20 @@ from app.extensions import ma
 from marshmallow import fields
 from app.models import Mechanic
 
-class MechanicSchema(ma.SQLAlchemySchema):
+class MechanicSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Mechanic
         load_instance = True
+        include_fk = True
 
-    id = ma.auto_field(dump_only=True)
-    name = ma.auto_field(required=True)
-    email = ma.auto_field(required=True)
-    specialty = ma.auto_field(required=False)
-
-    # Accepts password on input only; never dumped
+    id = fields.Int(dump_only=True)
+    email = fields.Email(required=True)
     password = fields.String(load_only=True, required=True)
+    name = fields.String(required=True)
+    specialty = fields.String(required=False)
+
+    # Nested: show tickets mechanic works on
+    tickets = fields.List(fields.Nested(lambda: ServiceTicketSchema(exclude=("mechanics",))))
 
 mechanic_schema = MechanicSchema()
 mechanics_schema = MechanicSchema(many=True)

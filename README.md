@@ -1,108 +1,106 @@
 # Mechanic Shop API
 
-A Flask-based REST API for managing mechanics and service tickets.
+A Flask + SQLAlchemy REST API for managing a mechanic shop.  
+Supports mechanics, customers, inventory (parts), and service tickets.  
+Built for Coding Temple assignments.
 
 ---
 
-## Setup
+## 🚀 Features
 
-1. Clone the repository and open it in VS Code (or your preferred editor).
-2. Create a virtual environment and install dependencies:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate   # Mac/Linux
-   venv\Scripts\activate      # Windows
-   pip install -r requirements.txt
-   ```
-3. Run the development server:
-   ```bash
-   flask run
-   ```
+- **Mechanics**
+  - Create, login (JWT), update/delete self
+  - View assigned tickets
+  - Get mechanic with most tickets
+- **Customers**
+  - Create, search by email, update/delete
+- **Service Tickets**
+  - CRUD tickets
+  - Assign/remove mechanics
+  - Add parts to tickets
+  - Paginated ticket view
+- **Inventory**
+  - CRUD parts
 
 ---
 
-API Endpoints
-👨 Mechanics
+## 📦 Tech Stack
 
-POST /mechanics → Create a new mechanic
+- Python 3.11+
+- Flask
+- SQLAlchemy 2.0
+- Marshmallow
+- Flask-Limiter (rate limiting)
+- Flask-Caching
+- python-jose (JWT)
 
-POST /mechanics/login → Login and receive JWT
+---
 
-GET /mechanics → Retrieve all mechanics
+## ⚙️ Setup
 
-PUT /mechanics/<id> → Update mechanic by ID
+1. **Clone the repo**
+   ```bash
+   git clone <your-repo-url>
+   cd mechanic-api
+   Create and activate virtual environment
+   ```
 
-DELETE /mechanics/<id> → Delete mechanic by ID
+bash
+Copy
+Edit
+python -m venv venv
+source venv/bin/activate # Mac/Linux
+venv\Scripts\activate # Windows
+Install dependencies
 
-👥 Customers
+bash
+Copy
+Edit
+pip install -r requirements.txt
+Seed the database
 
-POST /customers → Create a new customer
+bash
+Copy
+Edit
+python seed.py
+Run the server
 
-GET /customers → Retrieve all customers
+bash
+Copy
+Edit
+flask run
+Server starts on: http://127.0.0.1:5000
 
-PUT /customers/<id> → Update customer by ID
+🔑 Authentication
+Login via /mechanics/login to receive a JWT.
 
-DELETE /customers/<id> → Delete customer by ID
+Pass token in headers for protected routes:
 
-📝 Service Tickets
+makefile
+Copy
+Edit
+Authorization: Bearer <your_token>
+🧪 Testing with Postman
+Import MechanicAPI_Assignment.postman_collection.json
 
-POST /service_tickets → Create a new service ticket
+Import MechanicAPI_env.postman_environment.json
 
-GET /service_tickets → Retrieve all tickets
+Select MechanicAPI Environment in Postman.
 
-GET /service_tickets/paginated?page=1&per_page=5 → Paginated tickets
+Run Mechanics → Login Mechanic to get token.
 
-PUT /service_tickets/<id> → Update ticket by ID
+Token auto-fills → test Customers, Tickets, Inventory endpoints.
 
-DELETE /service_tickets/<id> → Delete ticket by ID
+🗂 ERD
+The project includes an auto-generated ERD (erd.png) showing tables and relationships.
 
-POST /service_tickets/<ticket_id>/assign/<mechanic_id> → Assign a mechanic to a ticket
+📌 Notes
+Database resets each time you run seed.py
 
-POST /service_tickets/<ticket_id>/remove/<mechanic_id> → Remove a mechanic from a ticket
+Default seeded accounts:
 
-POST /service_tickets/<ticket_id>/parts → Add one or multiple parts to a ticket
-Example request body:
+Admin User → admin@example.com / password123
 
-{
-"parts": [
-{ "part_id": 1, "quantity": 2 },
-{ "part_id": 3, "quantity": 1 },
-{ "part_id": 5, "quantity": 4 }
-]
-}
+Mike Wrench → mike.wrench@example.com / mike123
 
-🛠️ Inventory
-
-POST /parts → Add a new part
-
-GET /parts → Retrieve all parts
-
-GET /parts/<id> → Retrieve part by ID
-
-PUT /parts/<id> → Update part
-
-DELETE /parts/<id> → Delete part
-
-🗂️ Postman Usage
-
-Import the provided collection:
-Mechanic_API_New.postman_collection.json
-
-(Optional) Import environment file:
-Mechanic_API_New.postman_environment.json
-
-Use JWT token from /mechanics/login for protected routes.
-
-📊 Database
-
-Entity Relationship Diagram (ERD):
-
-📝 Notes
-
-Input validation handled with Marshmallow schemas.
-
-SQLAlchemy ORM + Flask-Migrate for database schema and migrations.
-
-Flask-Limiter used to prevent spam requests.
-
-Flask-Caching available for optimization.
+Sarah Bolt → sarah.bolt@example.com / sarah123

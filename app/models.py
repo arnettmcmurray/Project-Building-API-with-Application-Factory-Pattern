@@ -61,6 +61,7 @@ class ServiceTicket(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     description: Mapped[str] = mapped_column(String(200), nullable=False)
     date: Mapped[datetime] = mapped_column(default=datetime.utcnow, nullable=False)
+    status: Mapped[str] = mapped_column(String(50), nullable=False, default="Open") #temp edit?
     customer_id: Mapped[int] = mapped_column(
         ForeignKey("customer.id", name="fk_service_ticket_customer_id"),
         nullable=False
