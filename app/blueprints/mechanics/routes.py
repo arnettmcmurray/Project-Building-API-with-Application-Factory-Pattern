@@ -11,17 +11,18 @@ from marshmallow import ValidationError
 from sqlalchemy.exc import IntegrityError
 from jose import jwt, JWTError
 from sqlalchemy import func, desc
-from .schemas import mechanic_schema, mechanics_schema
+
 
 @mechanics_bp.route("/ping", methods=["GET"])
 def ping():
     return jsonify({"ok": True}), 200
 
+
 # ---------------- JWT helper ----------------
 def encode_token(mechanic_id: int) -> str:
     now = datetime.now(timezone.utc)
     payload = {
-        "sub": str(mechanic_id),                     # subject must be a string
+        "sub": str(mechanic_id),
         "iat": int(now.timestamp()),
         "exp": int((now + timedelta(days=7)).timestamp()),
     }
@@ -59,7 +60,6 @@ def create_mechanic():
     except ValidationError as err:
         return jsonify({"errors": err.messages}), 400
 
-
     if "password" in request.json:
         mech.set_password(request.json["password"])
 
@@ -86,15 +86,13 @@ def login():
     except ValidationError as err:
         return jsonify({"errors": err.messages}), 400
 
-    # look up by mechanic name
-    mech = Mechanic.query.filter_by(name=creds["name"]).first()
+    mech = Mechanic.query.filter_by(email=creds["email"]).first()   # 🔧 fixed lookup
 
-    # check against plain-text password for now
     if mech and mech.check_password(creds["password"]):
         token = encode_token(mech.id)
         return jsonify({"token": token}), 200
 
-    return jsonify({"error": "Invalid name or password"}), 401
+    return jsonify({"error": "Invalid email or password"}), 401
 
 
 # ---- protected: update/delete self ----
@@ -131,9 +129,7 @@ def delete_mechanic(id):
 @mechanics_bp.route("/my-tickets", methods=["GET"])
 @token_required
 def my_tickets():
-    # admin passes 
     mech_id = request.args.get("mechanic_id") or (request.json.get("mechanic_id") if request.is_json else None)
-
     if not mech_id:
         mech_id = request.mechanic_id  
 
@@ -143,11 +139,15 @@ def my_tickets():
         .all()
     )
     return jsonify([
-        {"id": t.id, "description": t.description, "status": t.status}
+        {
+            "id": t.id,
+            "description": t.description,
+            "date": t.date.isoformat(),
+            "customer_id": t.customer_id
+        }
         for t in tickets
     ]), 200
 
-# === HOMEWORK ADDITION: Mechanic(s) with most tickets ===
 @mechanics_bp.route("/top", methods=["GET"])
 @token_required
 def mechanic_with_most_tickets():
@@ -156,7 +156,7 @@ def mechanic_with_most_tickets():
             Mechanic.id,
             Mechanic.name,
             Mechanic.email,
-            func.count(ticket_mechanics.c.ticket_id).label("ticket_count")
+            func.count(ticket_mechanics.c.service_ticket_id).label("ticket_count")   # 🔧 fixed column
         )
         .join(ticket_mechanics, Mechanic.id == ticket_mechanics.c.mechanic_id)
         .group_by(Mechanic.id)
@@ -174,6 +174,7 @@ def mechanic_with_most_tickets():
         "ticket_count": int(result.ticket_count)
     }), 200
 
+
 @mechanics_bp.route("/ticket-count", methods=["GET"])
 @token_required
 def mechanics_by_ticket_count():
@@ -182,7 +183,7 @@ def mechanics_by_ticket_count():
             Mechanic.id,
             Mechanic.name,
             Mechanic.email,
-            func.count(ticket_mechanics.c.ticket_id).label("ticket_count")
+            func.count(ticket_mechanics.c.service_ticket_id).label("ticket_count")   # 🔧 fixed column
         )
         .join(ticket_mechanics, Mechanic.id == ticket_mechanics.c.mechanic_id)
         .group_by(Mechanic.id)

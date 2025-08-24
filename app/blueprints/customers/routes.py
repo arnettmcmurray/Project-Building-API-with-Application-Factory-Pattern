@@ -6,14 +6,12 @@ from .schemas import customer_schema, customers_schema
 from marshmallow import ValidationError
 from sqlalchemy.exc import IntegrityError
 
-# === Blueprint setup ===
 customers_bp = Blueprint("customers", __name__, url_prefix="/customers")
 
-# === Create customer ===
 
+# === Create customer ===
 @customers_bp.route("/", methods=["POST"])
-@token_required
-def create_customer():
+def create_customer():   # no token_required at moment
     try:
         customer = customer_schema.load(request.json)
     except ValidationError as err:
@@ -24,7 +22,7 @@ def create_customer():
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
-        return jsonify({"error": "Email or phone already exists"}), 409
+        return jsonify({"error": "Email already exists"}), 409   
 
     return customer_schema.jsonify(customer), 201
 
@@ -59,7 +57,6 @@ def update_customer(id):
     customer = Customer.query.get_or_404(id)
     data = request.json or {}
 
-    # update fields if provided
     if "name" in data:
         customer.name = data["name"]
     if "email" in data:
@@ -69,7 +66,12 @@ def update_customer(id):
     if "car" in data:
         customer.car = data["car"]
 
-    db.session.commit()
+    try:   # IntegrityError handling
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({"error": "Email already exists"}), 409
+
     return customer_schema.jsonify(customer), 200
 
 
