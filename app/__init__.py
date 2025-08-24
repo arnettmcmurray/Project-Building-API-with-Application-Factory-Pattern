@@ -1,14 +1,10 @@
 from flask import Flask
 from app.extensions import db, ma, migrate, limiter, cache
-
-
-# blueprint imports
+# import BP
 from app.blueprints.mechanics import mechanics_bp
 from app.blueprints.service_tickets import service_tickets_bp
-from app.blueprints.customers.routes import customers_bp
-print("DEBUG >>> Customers BP loaded:", customers_bp)
+from app.blueprints.customers import customers_bp
 from app.blueprints.inventory import inventory_bp
-
 
 def create_app(config_class="config.Config"):
     app = Flask(__name__)
@@ -21,9 +17,10 @@ def create_app(config_class="config.Config"):
     limiter.init_app(app)
     cache.init_app(app)
 
+    # register blueprints
     app.register_blueprint(mechanics_bp)
     app.register_blueprint(service_tickets_bp)
     app.register_blueprint(customers_bp)
-    print("DEBUG >>> Customers BP registered:", app.blueprints.keys())
-    app.register_blueprint(inventory_bp, url_prefix="/parts")
+    app.register_blueprint(inventory_bp)
+
     return app

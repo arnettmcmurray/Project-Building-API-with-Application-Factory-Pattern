@@ -1,21 +1,18 @@
 from sqlalchemy_schemadisplay import create_schema_graph
-from app.extensions import db
 from app import create_app
+from app.extensions import db
 
-# Create app + push context in order
 app = create_app()
-with app.app_context():
-    engine = db.get_engine()
-    metadata = db.Model.metadata
 
+with app.app_context():
     graph = create_schema_graph(
-        metadata=metadata,
-        engine=engine,
-        show_datatypes=True,
-        show_indexes=True,
-        rankdir="LR",
-        concentrate=False
-    )
+    engine=db.engine,
+    metadata=db.Model.metadata,
+    show_datatypes=True,    # column types
+    show_indexes=True,      # keep indexes visible for clarity
+    rankdir="TB",           # top-to-bottom layout 
+    concentrate=True        # merge lines
+)
 
     graph.write_png("erd.png")
-    print("✅ ERD generated as erd.png")
+    print("ERD generated as erd.png")

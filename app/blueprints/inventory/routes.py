@@ -61,6 +61,10 @@ def update_part(id):
 @inventory_bp.route("/<int:id>", methods=["DELETE"])
 def delete_part(id):
     part = Inventory.query.get_or_404(id)
-    db.session.delete(part)
-    db.session.commit()
+    try:
+        db.session.delete(part)
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({"error": "Part is linked to a ticket and cannot be deleted"}), 400
     return jsonify({"message": f"Part {id} deleted"}), 200

@@ -1,6 +1,7 @@
 from app.extensions import ma
 from marshmallow import fields
 from app.models import Mechanic, Customer, ServiceTicket, Inventory
+from app.blueprints.service_tickets.schemas import ServiceTicketSchema
 
 class InventorySchema(ma.SQLAlchemySchema):
     class Meta:

@@ -4,7 +4,8 @@ from app.models import ServiceTicket, Mechanic, ticket_mechanics, Inventory, Ser
 from .schemas import service_ticket_schema, service_tickets_schema
 from . import service_tickets_bp
 from marshmallow import ValidationError
-from app.blueprints.mechanics.routes import token_required
+
+from app.utils.auth import token_required
 
 
 # Create a ticket
