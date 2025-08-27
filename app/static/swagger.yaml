@@ -13,6 +13,12 @@ consumes: # What input format does the API accept?
 produces: # What output format does the API return?
   - "application/json" # Returns JSON output
 
+securityDefinitions: # Defines how auth works in this API
+  bearerAuth: # Name of the security scheme
+    type: apiKey # API key style (works for JWT tokens)
+    name: Authorization # Header name
+    in: header # Token goes in the header
+
 # ======================================================
 # ROUTES SECTION — each endpoint defined under "paths"
 # ======================================================
@@ -63,7 +69,7 @@ paths:
         400:
           description: "Validation error"
         409:
-          description: "Email already exists" # Matches your IntegrityError handler
+          description: "Email already exists"
         500:
           description: "Server error while creating customer"
 
@@ -72,6 +78,8 @@ paths:
         - Customers
       summary: "Get all customers"
       description: "Returns all customers (cached). Requires authentication token."
+      security: # Reference to bearerAuth
+        - bearerAuth: []
       responses:
         200:
           description: "Customer list"
@@ -88,8 +96,10 @@ paths:
         - Customers
       summary: "Search customer by email"
       description: "Finds a customer by email. Requires token."
+      security: # Reference to bearerAuth
+        - bearerAuth: []
       parameters:
-        - name: "email" # Query parameter (?email=...)
+        - name: "email"
           in: "query"
           description: "Email address to search"
           required: true
@@ -112,6 +122,8 @@ paths:
         - Customers
       summary: "Update customer"
       description: "Updates customer details by ID. Requires token."
+      security: # Reference to bearerAuth
+        - bearerAuth: []
       parameters:
         - name: "id"
           in: "path"
@@ -145,6 +157,8 @@ paths:
         - Customers
       summary: "Delete customer"
       description: "Deletes a customer by ID. Requires token."
+      security: # Reference to bearerAuth
+        - bearerAuth: []
       parameters:
         - name: "id"
           in: "path"
@@ -163,63 +177,12 @@ paths:
         500:
           description: "Server error while deleting customer"
 
-  /mechanics: # Mechanics endpoint
-    get:
-      tags:
-        - Mechanics
-      summary: "Get mechanics"
-      description: "Retrieve all mechanics working in the shop."
-      responses:
-        200:
-          description: "List of mechanics"
-          schema:
-            $ref: "#/definitions/MechanicsList"
-        500:
-          description: "Server error while retrieving mechanics"
-
-  /service-tickets: # Service ticket endpoint
-    post:
-      tags:
-        - Service Tickets
-      summary: "Create service ticket"
-      description: "Opens a new service ticket for a customer and assigns a mechanic."
-      parameters:
-        - in: "body"
-          name: "body"
-          description: "Ticket details"
-          required: true
-          schema:
-            $ref: "#/definitions/TicketPayload"
-      responses:
-        201:
-          description: "Service ticket created"
-          schema:
-            $ref: "#/definitions/TicketResponse"
-        400:
-          description: "Invalid ticket data"
-        500:
-          description: "Server error while creating ticket"
-
-  /inventory: # Inventory endpoint
-    get:
-      tags:
-        - Inventory
-      summary: "Get inventory"
-      description: "Retrieve list of parts/items currently in inventory."
-      responses:
-        200:
-          description: "Inventory list"
-          schema:
-            $ref: "#/definitions/InventoryList"
-        500:
-          description: "Server error while retrieving inventory"
-
 # ======================================================
 # DEFINITIONS SECTION — reusable models referenced above
 # ======================================================
 definitions:
   # --- Auth Models ---
-  LoginCredentials: # Structure for login request
+  LoginCredentials:
     type: object
     properties:
       email:
@@ -229,11 +192,11 @@ definitions:
     required:
       - email
       - password
-    example: # Example for login payload
+    example:
       email: "john@example.com"
       password: "password123"
 
-  LoginResponse: # Structure for login success response
+  LoginResponse:
     type: object
     properties:
       token:
@@ -242,13 +205,13 @@ definitions:
         type: string
       status:
         type: string
-    example: # Example success response
+    example:
       token: "abc123"
       message: "Welcome back, John!"
       status: "success"
 
   # --- Customer Models ---
-  CustomerPayload: # Payload for create/update customer
+  CustomerPayload:
     type: object
     properties:
       name:
@@ -264,13 +227,13 @@ definitions:
       - email
       - phone
       - password
-    example: # Example for customer payload
+    example:
       name: "Jane Doe"
       email: "jane@example.com"
       phone: "123-456-7890"
       password: "securePass123"
 
-  CustomerResponse: # Response for a single customer
+  CustomerResponse:
     type: object
     properties:
       id:
@@ -281,17 +244,17 @@ definitions:
         type: string
       phone:
         type: string
-    example: # Example customer response
+    example:
       id: 1
       name: "Jane Doe"
       email: "jane@example.com"
       phone: "123-456-7890"
 
-  CustomersList: # Response for list of customers
+  CustomersList:
     type: array
     items:
       $ref: "#/definitions/CustomerResponse"
-    example: # Example array of customers
+    example:
       - id: 1
         name: "Jane Doe"
         email: "jane@example.com"
@@ -301,103 +264,10 @@ definitions:
         email: "john@example.com"
         phone: "555-555-5555"
 
-  DeleteResponse: # Response for delete operation
+  DeleteResponse:
     type: object
     properties:
       message:
         type: string
     example:
       message: "Customer deleted successfully."
-
-  # --- Mechanic Models ---
-  MechanicResponse: # Single mechanic response
-    type: object
-    properties:
-      id:
-        type: integer
-      name:
-        type: string
-      specialty:
-        type: string
-    example:
-      id: 1
-      name: "Mike Wrench"
-      specialty: "Engine Repair"
-
-  MechanicsList: # Response for all mechanics
-    type: array
-    items:
-      $ref: "#/definitions/MechanicResponse"
-    example:
-      - id: 1
-        name: "Mike Wrench"
-        specialty: "Engine Repair"
-      - id: 2
-        name: "Sally Bolt"
-        specialty: "Transmission"
-
-  # --- Service Ticket Models ---
-  TicketPayload: # Payload to create a service ticket
-    type: object
-    properties:
-      customer_id:
-        type: integer
-      mechanic_id:
-        type: integer
-      description:
-        type: string
-    required:
-      - customer_id
-      - mechanic_id
-      - description
-    example:
-      customer_id: 1
-      mechanic_id: 2
-      description: "Brake replacement"
-
-  TicketResponse: # Response after ticket is created
-    type: object
-    properties:
-      id:
-        type: integer
-      customer_id:
-        type: integer
-      mechanic_id:
-        type: integer
-      description:
-        type: string
-      status:
-        type: string
-    example:
-      id: 100
-      customer_id: 1
-      mechanic_id: 2
-      description: "Brake replacement"
-      status: "open"
-
-  # --- Inventory Models ---
-  InventoryItem: # Single inventory item
-    type: object
-    properties:
-      id:
-        type: integer
-      name:
-        type: string
-      quantity:
-        type: integer
-    example:
-      id: 10
-      name: "Brake Pads"
-      quantity: 25
-
-  InventoryList: # Response for inventory items
-    type: array
-    items:
-      $ref: "#/definitions/InventoryItem"
-    example:
-      - id: 10
-        name: "Brake Pads"
-        quantity: 25
-      - id: 11
-        name: "Oil Filter"
-        quantity: 50
