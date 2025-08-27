@@ -1,4 +1,5 @@
 swagger: "2.0" # Swagger/OpenAPI version
+
 info: # Info block shown at top of Swagger UI
   title: "Mechanic Shop API" # API title
   description: "API to manage cars, customers, mechanics, service tickets, and inventory for the shop"
@@ -13,6 +14,9 @@ consumes: # What input format does the API accept?
 produces: # What output format does the API return?
   - "application/json" # Returns JSON output
 
+# ======================================================
+# SECURITY DEFINITIONS
+# ======================================================
 securityDefinitions: # Defines how auth works in this API
   bearerAuth: # Name of the security scheme
     type: apiKey # API key style (works for JWT tokens)
@@ -23,159 +27,190 @@ securityDefinitions: # Defines how auth works in this API
 # ROUTES SECTION — each endpoint defined under "paths"
 # ======================================================
 paths:
-  /users/login: # Login route path
-    post: # HTTP method: POST
-      tags:
-        - Users # Groups this under "Users" category in Swagger UI
-      summary: "Login endpoint (generates a token)" # Short label
-      description: "Validates user credentials (email + password) and returns an auth token." # Longer description
-
-      parameters: # What data is required for this request?
-        - in: "body" # Data comes from the request body
-          name: "body" # Parameter name
-          description: "Login credentials (email + password)" # Explanation
-          required: true # Must be included
-          schema: # Reference shape of data
-            $ref: "#/definitions/LoginCredentials"
-
-      responses: # Possible responses from this endpoint
-        200:
-          description: "Login successful" # Success response
+  # ===================== USERS =====================
+  /users/login: # Login route.
+    post:
+      tags: [Users]
+      summary: "Login endpoint (generates a token)"
+      description: "Validates user credentials (email + password) and returns a JWT token."
+      parameters:
+        - in: body
+          name: body
+          description: "Login credentials payload"
+          required: true
           schema:
-            $ref: "#/definitions/LoginResponse" # Uses LoginResponse definition
+            $ref: "#/definitions/LoginCredentials"
+      responses:
+        200:
+          description: "Login successful — token returned"
+          schema: { $ref: "#/definitions/LoginResponse" }
         401:
-          description: "Invalid credentials" # Bad login attempt
+          description: "Invalid credentials"
         500:
-          description: "Server error while processing login" # Internal failure
+          description: "Server error while processing login"
 
-  /customers: # Customers main endpoint
-    post: # Create customer
-      tags:
-        - Customers
+  # ===================== CUSTOMERS =====================
+  /customers:
+    post:
+      tags: [Customers]
       summary: "Create customer"
       description: "Registers a new customer in the database."
       parameters:
-        - in: "body"
-          name: "body"
+        - in: body
+          name: body
           description: "Customer registration data"
           required: true
-          schema:
-            $ref: "#/definitions/CustomerPayload"
+          schema: { $ref: "#/definitions/CustomerPayload" }
       responses:
         201:
           description: "Customer created successfully"
-          schema:
-            $ref: "#/definitions/CustomerResponse"
-        400:
-          description: "Validation error"
-        409:
-          description: "Email already exists"
-        500:
-          description: "Server error while creating customer"
+          schema: { $ref: "#/definitions/CustomerResponse" }
+        400: { description: "Validation error" }
+        409: { description: "Email already exists" }
+        500: { description: "Server error while creating customer" }
 
-    get: # Get all customers
-      tags:
-        - Customers
+    get:
+      tags: [Customers]
       summary: "Get all customers"
       description: "Returns all customers (cached). Requires authentication token."
-      security: # Reference to bearerAuth
-        - bearerAuth: []
+      security: [{ bearerAuth: [] }]
       responses:
         200:
           description: "Customer list"
-          schema:
-            $ref: "#/definitions/CustomersList"
-        401:
-          description: "Unauthorized"
-        500:
-          description: "Server error while retrieving customers"
+          schema: { $ref: "#/definitions/CustomersList" }
+        401: { description: "Unauthorized" }
+        500: { description: "Server error while retrieving customers" }
 
-  /customers/search: # Search by email
+  /customers/search:
     get:
-      tags:
-        - Customers
+      tags: [Customers]
       summary: "Search customer by email"
       description: "Finds a customer by email. Requires token."
-      security: # Reference to bearerAuth
-        - bearerAuth: []
+      security: [{ bearerAuth: [] }] #security auth
       parameters:
-        - name: "email"
-          in: "query"
+        - name: email
+          in: query
           description: "Email address to search"
           required: true
           type: string
       responses:
         200:
           description: "Customer found"
-          schema:
-            $ref: "#/definitions/CustomerResponse"
-        400:
-          description: "Missing email parameter"
-        401:
-          description: "Unauthorized"
-        404:
-          description: "Customer not found"
+          schema: { $ref: "#/definitions/CustomerResponse" }
+        400: { description: "Missing email parameter" }
+        401: { description: "Unauthorized" }
+        404: { description: "Customer not found" }
 
-  /customers/{id}: # Customer-specific operations
-    put: # Update customer
-      tags:
-        - Customers
+  /customers/{id}:
+    put:
+      tags: [Customers]
       summary: "Update customer"
       description: "Updates customer details by ID. Requires token."
-      security: # Reference to bearerAuth
-        - bearerAuth: []
+      security: [{ bearerAuth: [] }] #security auth
       parameters:
-        - name: "id"
-          in: "path"
+        - name: id
+          in: path
           description: "ID of the customer"
           required: true
           type: integer
-        - in: "body"
-          name: "body"
+        - in: body
+          name: body
           description: "Updated customer information"
           required: true
-          schema:
-            $ref: "#/definitions/CustomerPayload"
+          schema: { $ref: "#/definitions/CustomerPayload" }
       responses:
         200:
           description: "Customer updated successfully"
-          schema:
-            $ref: "#/definitions/CustomerResponse"
-        400:
-          description: "Invalid update data"
-        401:
-          description: "Unauthorized"
-        404:
-          description: "Customer not found"
-        409:
-          description: "Email already exists"
-        500:
-          description: "Server error while updating customer"
+          schema: { $ref: "#/definitions/CustomerResponse" }
+        400: { description: "Invalid update data" }
+        401: { description: "Unauthorized" }
+        404: { description: "Customer not found" }
+        409: { description: "Email already exists" }
+        500: { description: "Server error while updating customer" }
 
-    delete: # Delete customer
-      tags:
-        - Customers
+    delete:
+      tags: [Customers]
       summary: "Delete customer"
       description: "Deletes a customer by ID. Requires token."
-      security: # Reference to bearerAuth
-        - bearerAuth: []
+      security: [{ bearerAuth: [] }] #security auth
       parameters:
-        - name: "id"
-          in: "path"
+        - name: id
+          in: path
           description: "ID of the customer"
           required: true
           type: integer
       responses:
         200:
           description: "Customer deleted successfully"
-          schema:
-            $ref: "#/definitions/DeleteResponse"
-        401:
-          description: "Unauthorized"
-        404:
-          description: "Customer not found"
-        500:
-          description: "Server error while deleting customer"
+          schema: { $ref: "#/definitions/DeleteResponse" }
+        401: { description: "Unauthorized" }
+        404: { description: "Customer not found" }
+        500: { description: "Server error while deleting customer" }
+
+  # ===================== MECHANICS =====================
+  /mechanics:
+    get:
+      tags: [Mechanics]
+      summary: "Get mechanics"
+      description: "Retrieve all mechanics working in the shop. Requires token."
+      security: [{ bearerAuth: [] }] #security auth
+      responses:
+        200:
+          description: "List of mechanics"
+          schema: { $ref: "#/definitions/MechanicsList" }
+        401: { description: "Unauthorized" }
+        500: { description: "Server error while retrieving mechanics" }
+
+  /mechanics/login:
+    post:
+      tags: [Mechanics]
+      summary: "Mechanic login"
+      description: "Login endpoint for mechanics — returns a token."
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema: { $ref: "#/definitions/LoginCredentials" }
+      responses:
+        200:
+          description: "Login successful"
+          schema: { $ref: "#/definitions/LoginResponse" }
+        401: { description: "Invalid credentials" }
+        500: { description: "Server error" }
+
+  # ===================== SERVICE TICKETS =====================
+  /service_tickets:
+    post:
+      tags: [Service Tickets]
+      summary: "Create service ticket"
+      description: "Opens a new service ticket for a customer and assigns a mechanic. Requires token."
+      security: [{ bearerAuth: [] }] #security auth
+      parameters:
+        - in: body
+          name: body
+          description: "Ticket details"
+          required: true
+          schema: { $ref: "#/definitions/TicketPayload" }
+      responses:
+        201:
+          description: "Service ticket created"
+          schema: { $ref: "#/definitions/TicketResponse" }
+        400: { description: "Invalid ticket data" }
+        500: { description: "Server error while creating ticket" }
+
+  # ===================== INVENTORY =====================
+  /inventory:
+    get:
+      tags: [Inventory]
+      summary: "Get inventory"
+      description: "Retrieve list of parts/items currently in inventory. Requires token."
+      security: [{ bearerAuth: [] }] #security auth
+      responses:
+        200:
+          description: "Inventory list"
+          schema: { $ref: "#/definitions/InventoryList" }
+        401: { description: "Unauthorized" }
+        500: { description: "Server error while retrieving inventory" }
 
 # ======================================================
 # DEFINITIONS SECTION — reusable models referenced above
@@ -185,89 +220,82 @@ definitions:
   LoginCredentials:
     type: object
     properties:
-      email:
-        type: string
-      password:
-        type: string
-    required:
-      - email
-      - password
-    example:
-      email: "john@example.com"
-      password: "password123"
+      email: { type: string }
+      password: { type: string }
+    required: [email, password]
 
   LoginResponse:
     type: object
     properties:
-      token:
-        type: string
-      message:
-        type: string
-      status:
-        type: string
-    example:
-      token: "abc123"
-      message: "Welcome back, John!"
-      status: "success"
+      token: { type: string }
+      message: { type: string }
+      status: { type: string }
 
-  # --- Customer Models ---
+  # --- Customers ---
   CustomerPayload:
     type: object
     properties:
-      name:
-        type: string
-      email:
-        type: string
-      phone:
-        type: string
-      password:
-        type: string
-    required:
-      - name
-      - email
-      - phone
-      - password
-    example:
-      name: "Jane Doe"
-      email: "jane@example.com"
-      phone: "123-456-7890"
-      password: "securePass123"
+      name: { type: string }
+      email: { type: string }
+      phone: { type: string }
+      password: { type: string }
+    required: [name, email, phone, password]
 
   CustomerResponse:
     type: object
     properties:
-      id:
-        type: integer
-      name:
-        type: string
-      email:
-        type: string
-      phone:
-        type: string
-    example:
-      id: 1
-      name: "Jane Doe"
-      email: "jane@example.com"
-      phone: "123-456-7890"
+      id: { type: integer }
+      name: { type: string }
+      email: { type: string }
+      phone: { type: string }
 
   CustomersList:
     type: array
-    items:
-      $ref: "#/definitions/CustomerResponse"
-    example:
-      - id: 1
-        name: "Jane Doe"
-        email: "jane@example.com"
-        phone: "123-456-7890"
-      - id: 2
-        name: "John Smith"
-        email: "john@example.com"
-        phone: "555-555-5555"
+    items: { $ref: "#/definitions/CustomerResponse" }
 
   DeleteResponse:
     type: object
     properties:
-      message:
-        type: string
-    example:
-      message: "Customer deleted successfully."
+      message: { type: string }
+
+  # --- Mechanics ---
+  MechanicResponse:
+    type: object
+    properties:
+      id: { type: integer }
+      name: { type: string }
+      specialty: { type: string }
+
+  MechanicsList:
+    type: array
+    items: { $ref: "#/definitions/MechanicResponse" }
+
+  # --- Service Tickets ---
+  TicketPayload:
+    type: object
+    properties:
+      customer_id: { type: integer }
+      mechanic_id: { type: integer }
+      description: { type: string }
+    required: [customer_id, mechanic_id, description]
+
+  TicketResponse:
+    type: object
+    properties:
+      id: { type: integer }
+      customer_id: { type: integer }
+      mechanic_id: { type: integer }
+      description: { type: string }
+      status: { type: string }
+
+  # --- Inventory ---
+  InventoryItem:
+    type: object
+    properties:
+      id: { type: integer }
+      name: { type: string }
+      quantity: { type: integer }
+
+  InventoryList:
+    type: array
+    items: { $ref: "#/definitions/InventoryItem" }
