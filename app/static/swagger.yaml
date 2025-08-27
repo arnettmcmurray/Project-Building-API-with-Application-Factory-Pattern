@@ -1,30 +1,30 @@
-swagger: "2.0" # Swagger/OpenAPI version
+swagger: "2.0"
 
-info: # Info block shown at top of Swagger UI
-  title: "Mechanic Shop API" # API title
+info:
+  title: "Mechanic Shop API"
   description: "API to manage cars, customers, mechanics, service tickets, and inventory for the shop"
-  version: "0.0.1" # Current API version
+  version: "0.0.1"
 
-host: "127.0.0.1:5000" # Base URL where API is served (localhost for dev)
-schemes: # Supported protocols
+host: "127.0.0.1:5000"
+schemes:
   - "http"
 
-consumes: # What input format does the API accept?
-  - "application/json" # Accepts JSON input
-produces: # What output format does the API return?
-  - "application/json" # Returns JSON output
+consumes:
+  - "application/json"
+produces:
+  - "application/json"
 
 # ======================================================
-# SECURITY DEFINITIONS
+# SECURITY
 # ======================================================
-securityDefinitions: # Defines how auth works in this API
-  bearerAuth: # Name of the security scheme
-    type: apiKey # API key style (works for JWT tokens)
-    name: Authorization # Header name
-    in: header # Token goes in the header
+securityDefinitions:
+  bearerAuth:
+    type: apiKey
+    name: Authorization
+    in: header
 
 # ======================================================
-# ROUTES SECTION — each endpoint defined under "paths"
+# ROUTES
 # ======================================================
 paths:
   # ===================== CUSTOMERS =====================
@@ -32,535 +32,380 @@ paths:
     post:
       tags: [Customers]
       summary: "Create customer"
-      description: "Registers a new customer in the database."
       parameters:
         - in: body
           name: body
-          description: "Customer registration data"
           required: true
           schema: { $ref: "#/definitions/CustomerPayload" }
       responses:
-        201:
-          description: "Customer created successfully"
-          schema: { $ref: "#/definitions/CustomerResponse" }
-        400: { description: "Validation error" }
-        409: { description: "Email already exists" }
-        500: { description: "Server error while creating customer" }
+        201: { description: "Customer created successfully" }
 
     get:
       tags: [Customers]
       summary: "Get all customers"
-      description: "Returns all customers (cached). Requires authentication token."
       security: [{ bearerAuth: [] }]
       responses:
         200:
           description: "Customer list"
           schema: { $ref: "#/definitions/CustomersList" }
-        401: { description: "Unauthorized" }
-        500: { description: "Server error while retrieving customers" }
 
   /customers/search:
     get:
       tags: [Customers]
       summary: "Search customer by email"
-      description: "Finds a customer by email. Requires token."
-      security: [{ bearerAuth: [] }] #security auth
+      security: [{ bearerAuth: [] }]
       parameters:
         - name: email
           in: query
-          description: "Email address to search"
-          required: true
           type: string
+          required: true
       responses:
         200:
           description: "Customer found"
           schema: { $ref: "#/definitions/CustomerResponse" }
-        400: { description: "Missing email parameter" }
-        401: { description: "Unauthorized" }
-        404: { description: "Customer not found" }
 
   /customers/{id}:
     put:
       tags: [Customers]
       summary: "Update customer"
-      description: "Updates customer details by ID. Requires token."
-      security: [{ bearerAuth: [] }] #security auth
+      security: [{ bearerAuth: [] }]
       parameters:
         - name: id
           in: path
-          description: "ID of the customer"
-          required: true
           type: integer
+          required: true
         - in: body
           name: body
-          description: "Updated customer information"
           required: true
           schema: { $ref: "#/definitions/CustomerPayload" }
       responses:
-        200:
-          description: "Customer updated successfully"
-          schema: { $ref: "#/definitions/CustomerResponse" }
-        400: { description: "Invalid update data" }
-        401: { description: "Unauthorized" }
-        404: { description: "Customer not found" }
-        409: { description: "Email already exists" }
-        500: { description: "Server error while updating customer" }
+        200: { description: "Updated" }
 
     delete:
       tags: [Customers]
       summary: "Delete customer"
-      description: "Deletes a customer by ID. Requires token."
-      security: [{ bearerAuth: [] }] #security auth
+      security: [{ bearerAuth: [] }]
       parameters:
         - name: id
           in: path
-          description: "ID of the customer"
-          required: true
           type: integer
+          required: true
       responses:
-        200:
-          description: "Customer deleted successfully"
-          schema: { $ref: "#/definitions/DeleteResponse" }
-        401: { description: "Unauthorized" }
-        404: { description: "Customer not found" }
-        500: { description: "Server error while deleting customer" }
+        200: { description: "Deleted" }
 
-  # ======================================================
-  # MECHANICS ROUTES — all endpoints under /mechanics
-  # ======================================================
-  /mechanics/login: # Mechanic login (token generator)
+  # ===================== MECHANICS =====================
+  /mechanics/login:
     post:
-      tags:
-        - Mechanics
-      summary: "Mechanic login (generates token)"
-      description: "Validates mechanic credentials (email + password) and returns an auth token."
+      tags: [Mechanics]
+      summary: "Login mechanic"
       parameters:
-        - in: "body"
-          name: "body"
-          description: "Mechanic login credentials"
+        - in: body
+          name: body
           required: true
-          schema:
-            $ref: "#/definitions/LoginCredentials"
+          schema: { $ref: "#/definitions/LoginCredentials" }
       responses:
-        200:
-          description: "Login successful"
-          schema:
-            $ref: "#/definitions/LoginResponse"
-        401:
-          description: "Invalid credentials"
-        500:
-          description: "Server error while processing login"
+        200: { description: "Login success" }
 
-  /mechanics: # Base mechanics endpoint
-    post: # Create new mechanic
-      tags:
-        - Mechanics
-      summary: "Register mechanic"
-      description: "Registers a new mechanic in the database."
+  /mechanics:
+    post:
+      tags: [Mechanics]
+      summary: "Create mechanic"
       parameters:
-        - in: "body"
-          name: "body"
-          description: "Mechanic registration data"
+        - in: body
+          name: body
           required: true
-          schema:
-            $ref: "#/definitions/MechanicPayload"
+          schema: { $ref: "#/definitions/MechanicPayload" }
       responses:
-        201:
-          description: "Mechanic created successfully"
-          schema:
-            $ref: "#/definitions/MechanicResponse"
-        400:
-          description: "Validation error"
-        409:
-          description: "Email already exists"
-        500:
-          description: "Server error while creating mechanic"
-
-    get: # Get all mechanics
-      tags:
-        - Mechanics
-      summary: "Get all mechanics"
-      description: "Returns all mechanics in the shop. Requires authentication."
-      security:
-        - bearerAuth: []
+        201: { description: "Created" }
+    get:
+      tags: [Mechanics]
+      summary: "Get mechanics"
+      security: [{ bearerAuth: [] }]
       responses:
-        200:
-          description: "Mechanics list"
-          schema:
-            $ref: "#/definitions/MechanicsList"
-        401:
-          description: "Unauthorized"
-        500:
-          description: "Server error while retrieving mechanics"
+        200: { description: "List" }
 
-  /mechanics/{id}: # Mechanic-specific operations
+  /mechanics/{id}:
     put:
-      tags:
-        - Mechanics
+      tags: [Mechanics]
       summary: "Update mechanic"
-      description: "Update mechanic details by ID. Requires token."
-      security:
-        - bearerAuth: []
+      security: [{ bearerAuth: [] }]
       parameters:
-        - name: "id"
-          in: "path"
-          description: "ID of the mechanic"
-          required: true
+        - name: id
+          in: path
           type: integer
-        - in: "body"
-          name: "body"
-          description: "Updated mechanic data"
           required: true
-          schema:
-            $ref: "#/definitions/MechanicPayload"
+        - in: body
+          name: body
+          required: true
+          schema: { $ref: "#/definitions/MechanicPayload" }
       responses:
-        200:
-          description: "Mechanic updated successfully"
-          schema:
-            $ref: "#/definitions/MechanicResponse"
-        400:
-          description: "Invalid update data"
-        401:
-          description: "Unauthorized"
-        404:
-          description: "Mechanic not found"
-        500:
-          description: "Server error while updating mechanic"
+        200: { description: "Updated" }
 
     delete:
-      tags:
-        - Mechanics
+      tags: [Mechanics]
       summary: "Delete mechanic"
-      description: "Deletes mechanic by ID. Requires token."
-      security:
-        - bearerAuth: []
+      security: [{ bearerAuth: [] }]
       parameters:
-        - name: "id"
-          in: "path"
-          description: "ID of the mechanic"
-          required: true
+        - name: id
+          in: path
           type: integer
+          required: true
       responses:
-        200:
-          description: "Mechanic deleted successfully"
-          schema:
-            $ref: "#/definitions/DeleteResponse"
-        401:
-          description: "Unauthorized"
-        404:
-          description: "Mechanic not found"
-        500:
-          description: "Server error while deleting mechanic"
+        200: { description: "Deleted" }
 
   /mechanics/ping:
     get:
-      tags:
-        - Mechanics
-      summary: "Ping mechanics"
-      description: "Basic test route for mechanics service."
+      tags: [Mechanics]
+      summary: "Ping"
       responses:
-        200:
-          description: "Pong response"
-        500:
-          description: "Server error"
-
-  /mechanics/top:
-    get:
-      tags:
-        - Mechanics
-      summary: "Top mechanics"
-      description: "Retrieve list of mechanics ranked by performance."
-      responses:
-        200:
-          description: "Top mechanics returned"
-          schema:
-            $ref: "#/definitions/MechanicsList"
-        500:
-          description: "Server error"
-
-  /mechanics/ticket-count:
-    get:
-      tags:
-        - Mechanics
-      summary: "Mechanic ticket count"
-      description: "Retrieve the count of tickets handled by each mechanic."
-      responses:
-        200:
-          description: "Ticket counts returned"
-        500:
-          description: "Server error"
+        200: { description: "OK" }
 
   /mechanics/my-tickets:
     get:
-      tags:
-        - Mechanics
-      summary: "Mechanic tickets"
-      description: "Get all tickets assigned to the currently logged-in mechanic."
-      security:
-        - bearerAuth: []
+      tags: [Mechanics]
+      summary: "My tickets"
+      security: [{ bearerAuth: [] }]
+      responses:
+        200: { description: "List of tickets" }
+
+  # ===================== SERVICE TICKETS =====================
+  /service_tickets:
+    post:
+      tags: [Service Tickets]
+      summary: "Create ticket"
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema: { $ref: "#/definitions/TicketPayload" }
+      responses:
+        201: { description: "Created" }
+
+    get:
+      tags: [Service Tickets]
+      summary: "Get all tickets"
       responses:
         200:
-          description: "List of mechanic's tickets"
+          description: "List"
           schema:
-            $ref: "#/definitions/TicketList"
-        401:
-          description: "Unauthorized"
-        500:
-          description: "Server error while retrieving tickets"
-# ================================
-# SERVICE TICKETS
-# ================================
-/service_tickets: # Base ticket endpoint
-  post:
-    tags:
-      - Service Tickets
-    summary: "Create service ticket"
-    description: "Opens a new service ticket for a customer and assigns a mechanic."
-    parameters:
-      - in: "body"
-        name: "body"
-        description: "Ticket details payload"
-        required: true
-        schema:
-          $ref: "#/definitions/TicketPayload"
-    responses:
-      201:
-        description: "Service ticket created"
-        schema:
-          $ref: "#/definitions/TicketResponse"
-      400:
-        description: "Invalid ticket data"
-      500:
-        description: "Server error while creating ticket"
+            type: array
+            items: { $ref: "#/definitions/TicketResponse" }
 
-  get:
-    tags:
-      - Service Tickets
-    summary: "Get all tickets"
-    description: "Retrieve list of all service tickets."
-    responses:
-      200:
-        description: "List of service tickets"
-        schema:
-          type: array
-          items:
-            $ref: "#/definitions/TicketResponse"
-      500:
-        description: "Server error while retrieving tickets"
-
-# --- Get ticket by ID ---
-/service_tickets/{ticket_id}:
-  get:
-    tags:
-      - Service Tickets
-    summary: "Get ticket by ID"
-    description: "Retrieve a service ticket by its ID."
-    parameters:
-      - name: ticket_id
-        in: path
-        required: true
-        type: integer
-        description: "Service ticket ID"
-    responses:
-      200:
-        description: "Ticket retrieved successfully"
-        schema:
-          $ref: "#/definitions/TicketResponse"
-      404:
-        description: "Ticket not found"
-      500:
-        description: "Server error while retrieving ticket"
-
-  put:
-    tags:
-      - Service Tickets
-    summary: "Update ticket"
-    description: "Update ticket details by ID."
-    parameters:
-      - name: ticket_id
-        in: path
-        required: true
-        type: integer
-      - in: body
-        name: body
-        description: "Updated ticket data"
-        required: true
-        schema:
-          $ref: "#/definitions/TicketPayload"
-    responses:
-      200:
-        description: "Ticket updated successfully"
-        schema:
-          $ref: "#/definitions/TicketResponse"
-      400:
-        description: "Invalid update data"
-      404:
-        description: "Ticket not found"
-      500:
-        description: "Server error while updating ticket"
-
-  delete:
-    tags:
-      - Service Tickets
-    summary: "Delete ticket"
-    description: "Deletes a service ticket by ID."
-    parameters:
-      - name: ticket_id
-        in: path
-        required: true
-        type: integer
-    responses:
-      200:
-        description: "Ticket deleted successfully"
-      404:
-        description: "Ticket not found"
-      500:
-        description: "Server error while deleting ticket"
-
-# --- Assign mechanic to ticket ---
-/service_tickets/{ticket_id}/assign/{mech_id}:
-  post:
-    tags:
-      - Service Tickets
-    summary: "Assign mechanic to ticket"
-    description: "Assign a mechanic to an existing service ticket."
-    parameters:
-      - name: ticket_id
-        in: path
-        required: true
-        type: integer
-      - name: mech_id
-        in: path
-        required: true
-        type: integer
-    responses:
-      200:
-        description: "Mechanic assigned successfully"
-      404:
-        description: "Ticket or mechanic not found"
-      500:
-        description: "Server error while assigning mechanic"
-
-# --- Remove mechanic from ticket ---
-/service_tickets/{ticket_id}/remove/{mech_id}:
-  post:
-    tags:
-      - Service Tickets
-    summary: "Remove mechanic from ticket"
-    description: "Unassign a mechanic from an existing service ticket."
-    parameters:
-      - name: ticket_id
-        in: path
-        required: true
-        type: integer
-      - name: mech_id
-        in: path
-        required: true
-        type: integer
-    responses:
-      200:
-        description: "Mechanic removed successfully"
-      404:
-        description: "Ticket or mechanic not found"
-      500:
-        description: "Server error while removing mechanic"
-
-# --- Add parts to ticket ---
-/service_tickets/{ticket_id}/parts:
-  post:
-    tags:
-      - Service Tickets
-    summary: "Add parts to ticket"
-    description: "Add parts to an existing service ticket."
-    parameters:
-      - name: ticket_id
-        in: path
-        required: true
-        type: integer
-      - in: body
-        name: body
-        description: "Parts data"
-        required: true
-        schema:
-          type: object
-          properties:
-            part_id:
-              type: integer
-            quantity:
-              type: integer
-    responses:
-      200:
-        description: "Parts added successfully"
-      400:
-        description: "Invalid part data"
-      404:
-        description: "Ticket or part not found"
-      500:
-        description: "Server error while adding parts"
-
-# --- Get paginated tickets ---
-/service_tickets/paginated:
-  get:
-    tags:
-      - Service Tickets
-    summary: "Get paginated tickets"
-    description: "Retrieve service tickets in a paginated format."
-    parameters:
-      - name: page
-        in: query
-        required: false
-        type: integer
-      - name: per_page
-        in: query
-        required: false
-        type: integer
-    responses:
-      200:
-        description: "Paginated tickets list"
-        schema:
-          type: array
-          items:
-            $ref: "#/definitions/TicketResponse"
-      500:
-        description: "Server error while retrieving paginated tickets"
-  # ======================================================
-  # INVENTORY ENDPOINTS
-  # ======================================================
-  /inventory:                # Inventory endpoint
+  /service_tickets/{ticket_id}:
     get:
-      tags:
-        - Inventory
+      tags: [Service Tickets]
+      summary: "Get ticket"
+      parameters:
+        - name: ticket_id
+          in: path
+          type: integer
+          required: true
+      responses:
+        200: { description: "Found" }
+    put:
+      tags: [Service Tickets]
+      summary: "Update ticket"
+      parameters:
+        - name: ticket_id
+          in: path
+          type: integer
+          required: true
+        - in: body
+          name: body
+          required: true
+          schema: { $ref: "#/definitions/TicketPayload" }
+      responses:
+        200: { description: "Updated" }
+    delete:
+      tags: [Service Tickets]
+      summary: "Delete ticket"
+      parameters:
+        - name: ticket_id
+          in: path
+          type: integer
+          required: true
+      responses:
+        200: { description: "Deleted" }
+
+  /service_tickets/paginated:
+    get:
+      tags: [Service Tickets]
+      summary: "Get paginated"
+      parameters:
+        - name: page
+          in: query
+          type: integer
+        - name: per_page
+          in: query
+          type: integer
+      responses:
+        200:
+          description: "Paginated list"
+          schema:
+            type: array
+            items: { $ref: "#/definitions/TicketResponse" }
+
+  # ===================== INVENTORY =====================
+  /inventory:
+    get:
+      tags: [Inventory]
       summary: "Get inventory"
-      description: "Retrieve list of parts/items currently in inventory."
       responses:
         200:
           description: "Inventory list"
-          schema:
-            $ref: "#/definitions/InventoryList"
-        500:
-          description: "Server error while retrieving inventory"
+          schema: { $ref: "#/definitions/InventoryList" }
 
 # ======================================================
-# DEFINITIONS — INVENTORY MODELS
+# DEFINITIONS WITH EXAMPLES
 # ======================================================
-  InventoryItem:             # Single inventory item
+definitions:
+  # ---- Customers ----
+  CustomerPayload:
     type: object
     properties:
-      id:
-        type: integer
-      name:
-        type: string
-      quantity:
-        type: integer
+      name: { type: string }
+      email: { type: string }
+      phone: { type: string }
+      car: { type: string }
+    example:
+      name: "Jane Doe"
+      email: "jane@example.com"
+      phone: "555-111-2222"
+      car: "Toyota Corolla"
+
+  CustomerResponse:
+    allOf:
+      - $ref: "#/definitions/CustomerPayload"
+      - type: object
+        properties:
+          id: { type: integer }
+    example:
+      id: 1
+      name: "Jane Doe"
+      email: "jane@example.com"
+      phone: "555-111-2222"
+      car: "Toyota Corolla"
+
+  CustomersList:
+    type: array
+    items: { $ref: "#/definitions/CustomerResponse" }
+    example:
+      - id: 1
+        name: "Jane Doe"
+        email: "jane@example.com"
+        phone: "555-111-2222"
+        car: "Toyota Corolla"
+
+  DeleteResponse:
+    type: object
+    properties:
+      message: { type: string }
+    example:
+      message: "Customer deleted successfully"
+
+  # ---- Mechanics ----
+  MechanicPayload:
+    type: object
+    properties:
+      name: { type: string }
+      email: { type: string }
+      specialty: { type: string }
+      password: { type: string }
+    example:
+      name: "Mike Wrench"
+      email: "mike@example.com"
+      specialty: "Engine Repair"
+      password: "test123"
+
+  MechanicResponse:
+    allOf:
+      - $ref: "#/definitions/MechanicPayload"
+      - type: object
+        properties:
+          id: { type: integer }
+    example:
+      id: 1
+      name: "Mike Wrench"
+      email: "mike@example.com"
+      specialty: "Engine Repair"
+
+  MechanicsList:
+    type: array
+    items: { $ref: "#/definitions/MechanicResponse" }
+    example:
+      - id: 1
+        name: "Mike Wrench"
+        email: "mike@example.com"
+        specialty: "Engine Repair"
+
+  LoginCredentials:
+    type: object
+    properties:
+      email: { type: string }
+      password: { type: string }
+    example:
+      email: "mike@example.com"
+      password: "test123"
+
+  LoginResponse:
+    type: object
+    properties:
+      token: { type: string }
+    example:
+      token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+  # ---- Service Tickets ----
+  TicketPayload:
+    type: object
+    properties:
+      description: { type: string }
+      customer_id: { type: integer }
+      mechanic_id: { type: integer }
+      date: { type: string, format: date-time }
+    example:
+      description: "Oil change and filter replacement"
+      customer_id: 1
+      mechanic_id: 1
+      date: "2025-08-27T10:00:00Z"
+
+  TicketResponse:
+    allOf:
+      - $ref: "#/definitions/TicketPayload"
+      - type: object
+        properties:
+          id: { type: integer }
+    example:
+      id: 1
+      description: "Oil change and filter replacement"
+      customer_id: 1
+      mechanic_id: 1
+      date: "2025-08-27T10:00:00Z"
+
+  TicketList:
+    type: array
+    items: { $ref: "#/definitions/TicketResponse" }
+    example:
+      - id: 1
+        description: "Oil change and filter replacement"
+        customer_id: 1
+        mechanic_id: 1
+        date: "2025-08-27T10:00:00Z"
+
+  # ---- Inventory ----
+  InventoryItem:
+    type: object
+    properties:
+      id: { type: integer }
+      name: { type: string }
+      quantity: { type: integer }
     example:
       id: 10
       name: "Brake Pads"
       quantity: 25
 
-  InventoryList:             # Response for inventory items
+  InventoryList:
     type: array
-    items:
-      $ref: "#/definitions/InventoryItem"
+    items: { $ref: "#/definitions/InventoryItem" }
     example:
       - id: 10
         name: "Brake Pads"
