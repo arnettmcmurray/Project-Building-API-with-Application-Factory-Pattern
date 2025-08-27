@@ -1,7 +1,3 @@
-# TODO: Customers blueprint not showing in flask routes (404s).
-# Possible cause: migration not applied or model/schema mismatch.
-# Endpoints defined but not registering → revisit after confirming DB.
-
 from flask import Blueprint, request, jsonify
 from app.extensions import db, cache
 from app.models import Customer
