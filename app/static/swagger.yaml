@@ -523,3 +523,48 @@ paths:
             $ref: "#/definitions/TicketResponse"
       500:
         description: "Server error while retrieving paginated tickets"
+  # ======================================================
+  # INVENTORY ENDPOINTS
+  # ======================================================
+  /inventory:                # Inventory endpoint
+    get:
+      tags:
+        - Inventory
+      summary: "Get inventory"
+      description: "Retrieve list of parts/items currently in inventory."
+      responses:
+        200:
+          description: "Inventory list"
+          schema:
+            $ref: "#/definitions/InventoryList"
+        500:
+          description: "Server error while retrieving inventory"
+
+# ======================================================
+# DEFINITIONS — INVENTORY MODELS
+# ======================================================
+  InventoryItem:             # Single inventory item
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      quantity:
+        type: integer
+    example:
+      id: 10
+      name: "Brake Pads"
+      quantity: 25
+
+  InventoryList:             # Response for inventory items
+    type: array
+    items:
+      $ref: "#/definitions/InventoryItem"
+    example:
+      - id: 10
+        name: "Brake Pads"
+        quantity: 25
+      - id: 11
+        name: "Oil Filter"
+        quantity: 50
