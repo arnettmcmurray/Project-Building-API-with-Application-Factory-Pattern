@@ -307,3 +307,219 @@ paths:
           description: "Unauthorized"
         500:
           description: "Server error while retrieving tickets"
+# ================================
+# SERVICE TICKETS
+# ================================
+/service_tickets: # Base ticket endpoint
+  post:
+    tags:
+      - Service Tickets
+    summary: "Create service ticket"
+    description: "Opens a new service ticket for a customer and assigns a mechanic."
+    parameters:
+      - in: "body"
+        name: "body"
+        description: "Ticket details payload"
+        required: true
+        schema:
+          $ref: "#/definitions/TicketPayload"
+    responses:
+      201:
+        description: "Service ticket created"
+        schema:
+          $ref: "#/definitions/TicketResponse"
+      400:
+        description: "Invalid ticket data"
+      500:
+        description: "Server error while creating ticket"
+
+  get:
+    tags:
+      - Service Tickets
+    summary: "Get all tickets"
+    description: "Retrieve list of all service tickets."
+    responses:
+      200:
+        description: "List of service tickets"
+        schema:
+          type: array
+          items:
+            $ref: "#/definitions/TicketResponse"
+      500:
+        description: "Server error while retrieving tickets"
+
+# --- Get ticket by ID ---
+/service_tickets/{ticket_id}:
+  get:
+    tags:
+      - Service Tickets
+    summary: "Get ticket by ID"
+    description: "Retrieve a service ticket by its ID."
+    parameters:
+      - name: ticket_id
+        in: path
+        required: true
+        type: integer
+        description: "Service ticket ID"
+    responses:
+      200:
+        description: "Ticket retrieved successfully"
+        schema:
+          $ref: "#/definitions/TicketResponse"
+      404:
+        description: "Ticket not found"
+      500:
+        description: "Server error while retrieving ticket"
+
+  put:
+    tags:
+      - Service Tickets
+    summary: "Update ticket"
+    description: "Update ticket details by ID."
+    parameters:
+      - name: ticket_id
+        in: path
+        required: true
+        type: integer
+      - in: body
+        name: body
+        description: "Updated ticket data"
+        required: true
+        schema:
+          $ref: "#/definitions/TicketPayload"
+    responses:
+      200:
+        description: "Ticket updated successfully"
+        schema:
+          $ref: "#/definitions/TicketResponse"
+      400:
+        description: "Invalid update data"
+      404:
+        description: "Ticket not found"
+      500:
+        description: "Server error while updating ticket"
+
+  delete:
+    tags:
+      - Service Tickets
+    summary: "Delete ticket"
+    description: "Deletes a service ticket by ID."
+    parameters:
+      - name: ticket_id
+        in: path
+        required: true
+        type: integer
+    responses:
+      200:
+        description: "Ticket deleted successfully"
+      404:
+        description: "Ticket not found"
+      500:
+        description: "Server error while deleting ticket"
+
+# --- Assign mechanic to ticket ---
+/service_tickets/{ticket_id}/assign/{mech_id}:
+  post:
+    tags:
+      - Service Tickets
+    summary: "Assign mechanic to ticket"
+    description: "Assign a mechanic to an existing service ticket."
+    parameters:
+      - name: ticket_id
+        in: path
+        required: true
+        type: integer
+      - name: mech_id
+        in: path
+        required: true
+        type: integer
+    responses:
+      200:
+        description: "Mechanic assigned successfully"
+      404:
+        description: "Ticket or mechanic not found"
+      500:
+        description: "Server error while assigning mechanic"
+
+# --- Remove mechanic from ticket ---
+/service_tickets/{ticket_id}/remove/{mech_id}:
+  post:
+    tags:
+      - Service Tickets
+    summary: "Remove mechanic from ticket"
+    description: "Unassign a mechanic from an existing service ticket."
+    parameters:
+      - name: ticket_id
+        in: path
+        required: true
+        type: integer
+      - name: mech_id
+        in: path
+        required: true
+        type: integer
+    responses:
+      200:
+        description: "Mechanic removed successfully"
+      404:
+        description: "Ticket or mechanic not found"
+      500:
+        description: "Server error while removing mechanic"
+
+# --- Add parts to ticket ---
+/service_tickets/{ticket_id}/parts:
+  post:
+    tags:
+      - Service Tickets
+    summary: "Add parts to ticket"
+    description: "Add parts to an existing service ticket."
+    parameters:
+      - name: ticket_id
+        in: path
+        required: true
+        type: integer
+      - in: body
+        name: body
+        description: "Parts data"
+        required: true
+        schema:
+          type: object
+          properties:
+            part_id:
+              type: integer
+            quantity:
+              type: integer
+    responses:
+      200:
+        description: "Parts added successfully"
+      400:
+        description: "Invalid part data"
+      404:
+        description: "Ticket or part not found"
+      500:
+        description: "Server error while adding parts"
+
+# --- Get paginated tickets ---
+/service_tickets/paginated:
+  get:
+    tags:
+      - Service Tickets
+    summary: "Get paginated tickets"
+    description: "Retrieve service tickets in a paginated format."
+    parameters:
+      - name: page
+        in: query
+        required: false
+        type: integer
+      - name: per_page
+        in: query
+        required: false
+        type: integer
+    responses:
+      200:
+        description: "Paginated tickets list"
+        schema:
+          type: array
+          items:
+            $ref: "#/definitions/TicketResponse"
+      500:
+        description: "Server error while retrieving paginated tickets"
