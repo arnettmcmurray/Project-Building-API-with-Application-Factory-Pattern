@@ -9,7 +9,7 @@ from app.utils.auth import token_required
 
 
 # Create a ticket
-@service_tickets_bp.route("/", methods=["POST"])
+@service_tickets_bp.route("", methods=["POST"])
 @token_required
 def create_ticket():
     try:
@@ -49,7 +49,7 @@ def get_ticket(ticket_id):
 
 
 # Get all tickets
-@service_tickets_bp.route("/", methods=["GET"])
+@service_tickets_bp.route("", methods=["GET"])
 def get_all_tickets():
     tickets = ServiceTicket.query.all()
     return service_tickets_schema.jsonify(tickets), 200

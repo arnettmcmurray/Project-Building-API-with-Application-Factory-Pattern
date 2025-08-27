@@ -1,7 +1,7 @@
 from flask import request, jsonify, current_app
 
 from . import mechanics_bp
-from app.extensions import db, Limiter
+from app.extensions import db, limiter
 from app.models import Mechanic, ServiceTicket, ticket_mechanics
 from app.blueprints.mechanics.schemas import mechanic_schema, mechanics_schema, login_schema
 
@@ -14,12 +14,13 @@ from app.utils.auth import encode_token, token_required
 
 
 @mechanics_bp.route("/ping", methods=["GET"])
+@limiter.limit("5 per minute")   # limit route
 def ping():
     return jsonify({"ok": True}), 200
 
 
 # ---------------- Mechanics routes ----------------
-@mechanics_bp.route("/", methods=["POST"])
+@mechanics_bp.route("", methods=["POST"])
 def create_mechanic():
     try:
         mech = mechanic_schema.load(request.json)
@@ -39,7 +40,7 @@ def create_mechanic():
     return mechanic_schema.jsonify(mech), 201
 
 
-@mechanics_bp.route("/", methods=["GET"])
+@mechanics_bp.route("", methods=["GET"])
 def get_mechanics():
     mechs = Mechanic.query.all()
     return mechanics_schema.jsonify(mechs), 200

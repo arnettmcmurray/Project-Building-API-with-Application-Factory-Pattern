@@ -1,0 +1,403 @@
+swagger: "2.0" # Swagger/OpenAPI version
+info: # Info block shown at top of Swagger UI
+  title: "Mechanic Shop API" # API title
+  description: "API to manage cars, customers, mechanics, service tickets, and inventory for the shop"
+  version: "0.0.1" # Current API version
+
+host: "127.0.0.1:5000" # Base URL where API is served (localhost for dev)
+schemes: # Supported protocols
+  - "http"
+
+consumes: # What input format does the API accept?
+  - "application/json" # Accepts JSON input
+produces: # What output format does the API return?
+  - "application/json" # Returns JSON output
+
+# ======================================================
+# ROUTES SECTION — each endpoint defined under "paths"
+# ======================================================
+paths:
+  /users/login: # Login route path
+    post: # HTTP method: POST
+      tags:
+        - Users # Groups this under "Users" category in Swagger UI
+      summary: "Login endpoint (generates a token)" # Short label
+      description: "Validates user credentials (email + password) and returns an auth token." # Longer description
+
+      parameters: # What data is required for this request?
+        - in: "body" # Data comes from the request body
+          name: "body" # Parameter name
+          description: "Login credentials (email + password)" # Explanation
+          required: true # Must be included
+          schema: # Reference shape of data
+            $ref: "#/definitions/LoginCredentials"
+
+      responses: # Possible responses from this endpoint
+        200:
+          description: "Login successful" # Success response
+          schema:
+            $ref: "#/definitions/LoginResponse" # Uses LoginResponse definition
+        401:
+          description: "Invalid credentials" # Bad login attempt
+        500:
+          description: "Server error while processing login" # Internal failure
+
+  /customers: # Customers main endpoint
+    post: # Create customer
+      tags:
+        - Customers
+      summary: "Create customer"
+      description: "Registers a new customer in the database."
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Customer registration data"
+          required: true
+          schema:
+            $ref: "#/definitions/CustomerPayload"
+      responses:
+        201:
+          description: "Customer created successfully"
+          schema:
+            $ref: "#/definitions/CustomerResponse"
+        400:
+          description: "Validation error"
+        409:
+          description: "Email already exists" # Matches your IntegrityError handler
+        500:
+          description: "Server error while creating customer"
+
+    get: # Get all customers
+      tags:
+        - Customers
+      summary: "Get all customers"
+      description: "Returns all customers (cached). Requires authentication token."
+      responses:
+        200:
+          description: "Customer list"
+          schema:
+            $ref: "#/definitions/CustomersList"
+        401:
+          description: "Unauthorized"
+        500:
+          description: "Server error while retrieving customers"
+
+  /customers/search: # Search by email
+    get:
+      tags:
+        - Customers
+      summary: "Search customer by email"
+      description: "Finds a customer by email. Requires token."
+      parameters:
+        - name: "email" # Query parameter (?email=...)
+          in: "query"
+          description: "Email address to search"
+          required: true
+          type: string
+      responses:
+        200:
+          description: "Customer found"
+          schema:
+            $ref: "#/definitions/CustomerResponse"
+        400:
+          description: "Missing email parameter"
+        401:
+          description: "Unauthorized"
+        404:
+          description: "Customer not found"
+
+  /customers/{id}: # Customer-specific operations
+    put: # Update customer
+      tags:
+        - Customers
+      summary: "Update customer"
+      description: "Updates customer details by ID. Requires token."
+      parameters:
+        - name: "id"
+          in: "path"
+          description: "ID of the customer"
+          required: true
+          type: integer
+        - in: "body"
+          name: "body"
+          description: "Updated customer information"
+          required: true
+          schema:
+            $ref: "#/definitions/CustomerPayload"
+      responses:
+        200:
+          description: "Customer updated successfully"
+          schema:
+            $ref: "#/definitions/CustomerResponse"
+        400:
+          description: "Invalid update data"
+        401:
+          description: "Unauthorized"
+        404:
+          description: "Customer not found"
+        409:
+          description: "Email already exists"
+        500:
+          description: "Server error while updating customer"
+
+    delete: # Delete customer
+      tags:
+        - Customers
+      summary: "Delete customer"
+      description: "Deletes a customer by ID. Requires token."
+      parameters:
+        - name: "id"
+          in: "path"
+          description: "ID of the customer"
+          required: true
+          type: integer
+      responses:
+        200:
+          description: "Customer deleted successfully"
+          schema:
+            $ref: "#/definitions/DeleteResponse"
+        401:
+          description: "Unauthorized"
+        404:
+          description: "Customer not found"
+        500:
+          description: "Server error while deleting customer"
+
+  /mechanics: # Mechanics endpoint
+    get:
+      tags:
+        - Mechanics
+      summary: "Get mechanics"
+      description: "Retrieve all mechanics working in the shop."
+      responses:
+        200:
+          description: "List of mechanics"
+          schema:
+            $ref: "#/definitions/MechanicsList"
+        500:
+          description: "Server error while retrieving mechanics"
+
+  /service-tickets: # Service ticket endpoint
+    post:
+      tags:
+        - Service Tickets
+      summary: "Create service ticket"
+      description: "Opens a new service ticket for a customer and assigns a mechanic."
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Ticket details"
+          required: true
+          schema:
+            $ref: "#/definitions/TicketPayload"
+      responses:
+        201:
+          description: "Service ticket created"
+          schema:
+            $ref: "#/definitions/TicketResponse"
+        400:
+          description: "Invalid ticket data"
+        500:
+          description: "Server error while creating ticket"
+
+  /inventory: # Inventory endpoint
+    get:
+      tags:
+        - Inventory
+      summary: "Get inventory"
+      description: "Retrieve list of parts/items currently in inventory."
+      responses:
+        200:
+          description: "Inventory list"
+          schema:
+            $ref: "#/definitions/InventoryList"
+        500:
+          description: "Server error while retrieving inventory"
+
+# ======================================================
+# DEFINITIONS SECTION — reusable models referenced above
+# ======================================================
+definitions:
+  # --- Auth Models ---
+  LoginCredentials: # Structure for login request
+    type: object
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+      - email
+      - password
+    example: # Example for login payload
+      email: "john@example.com"
+      password: "password123"
+
+  LoginResponse: # Structure for login success response
+    type: object
+    properties:
+      token:
+        type: string
+      message:
+        type: string
+      status:
+        type: string
+    example: # Example success response
+      token: "abc123"
+      message: "Welcome back, John!"
+      status: "success"
+
+  # --- Customer Models ---
+  CustomerPayload: # Payload for create/update customer
+    type: object
+    properties:
+      name:
+        type: string
+      email:
+        type: string
+      phone:
+        type: string
+      password:
+        type: string
+    required:
+      - name
+      - email
+      - phone
+      - password
+    example: # Example for customer payload
+      name: "Jane Doe"
+      email: "jane@example.com"
+      phone: "123-456-7890"
+      password: "securePass123"
+
+  CustomerResponse: # Response for a single customer
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      email:
+        type: string
+      phone:
+        type: string
+    example: # Example customer response
+      id: 1
+      name: "Jane Doe"
+      email: "jane@example.com"
+      phone: "123-456-7890"
+
+  CustomersList: # Response for list of customers
+    type: array
+    items:
+      $ref: "#/definitions/CustomerResponse"
+    example: # Example array of customers
+      - id: 1
+        name: "Jane Doe"
+        email: "jane@example.com"
+        phone: "123-456-7890"
+      - id: 2
+        name: "John Smith"
+        email: "john@example.com"
+        phone: "555-555-5555"
+
+  DeleteResponse: # Response for delete operation
+    type: object
+    properties:
+      message:
+        type: string
+    example:
+      message: "Customer deleted successfully."
+
+  # --- Mechanic Models ---
+  MechanicResponse: # Single mechanic response
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      specialty:
+        type: string
+    example:
+      id: 1
+      name: "Mike Wrench"
+      specialty: "Engine Repair"
+
+  MechanicsList: # Response for all mechanics
+    type: array
+    items:
+      $ref: "#/definitions/MechanicResponse"
+    example:
+      - id: 1
+        name: "Mike Wrench"
+        specialty: "Engine Repair"
+      - id: 2
+        name: "Sally Bolt"
+        specialty: "Transmission"
+
+  # --- Service Ticket Models ---
+  TicketPayload: # Payload to create a service ticket
+    type: object
+    properties:
+      customer_id:
+        type: integer
+      mechanic_id:
+        type: integer
+      description:
+        type: string
+    required:
+      - customer_id
+      - mechanic_id
+      - description
+    example:
+      customer_id: 1
+      mechanic_id: 2
+      description: "Brake replacement"
+
+  TicketResponse: # Response after ticket is created
+    type: object
+    properties:
+      id:
+        type: integer
+      customer_id:
+        type: integer
+      mechanic_id:
+        type: integer
+      description:
+        type: string
+      status:
+        type: string
+    example:
+      id: 100
+      customer_id: 1
+      mechanic_id: 2
+      description: "Brake replacement"
+      status: "open"
+
+  # --- Inventory Models ---
+  InventoryItem: # Single inventory item
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      quantity:
+        type: integer
+    example:
+      id: 10
+      name: "Brake Pads"
+      quantity: 25
+
+  InventoryList: # Response for inventory items
+    type: array
+    items:
+      $ref: "#/definitions/InventoryItem"
+    example:
+      - id: 10
+        name: "Brake Pads"
+        quantity: 25
+      - id: 11
+        name: "Oil Filter"
+        quantity: 50

@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
-from app.extensions import db, Cache
+from app.extensions import db, cache
 from app.models import Customer
-from app.blueprints.mechanics.routes import token_required
+from app.utils.auth import token_required
 from .schemas import customer_schema, customers_schema
 from marshmallow import ValidationError
 from sqlalchemy.exc import IntegrityError
@@ -10,7 +10,7 @@ customers_bp = Blueprint("customers", __name__, url_prefix="/customers")
 
 
 # === Create customer ===
-@customers_bp.route("/", methods=["POST"])
+@customers_bp.route("", methods=["POST"])
 def create_customer():   # no token_required at moment
     try:
         customer = customer_schema.load(request.json)
@@ -43,7 +43,7 @@ def search_customer_by_email():
 
 
 # === Get all customers ===
-@customers_bp.route("/", methods=["GET"])
+@customers_bp.route("", methods=["GET"])
 @token_required
 @cache.cached(timeout=60)   # cache results for 60 seconds
 def get_customers():

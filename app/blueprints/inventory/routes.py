@@ -11,7 +11,7 @@ inventories_schema = InventorySchema(many=True)
 
 
 # === Create part ===
-@inventory_bp.route("/", methods=["POST"])
+@inventory_bp.route("", methods=["POST"])
 def create_part():
     try:
         part = inventory_schema.load(request.json)
@@ -29,7 +29,7 @@ def create_part():
 
 
 # === Get all parts ===
-@inventory_bp.route("/", methods=["GET"])
+@inventory_bp.route("", methods=["GET"])
 def get_parts():
     parts = Inventory.query.all()
     return inventories_schema.jsonify(parts), 200
