@@ -1,0 +1,33 @@
+# =========================
+# MECHANIC SHOP API COMMANDS
+# =========================
+
+# --- Development ---
+# Run the app in development mode
+# Uses DevelopmentConfig → mechanic_shop.db
+flask run
+
+# --- Testing ---
+# Run all unit tests in tests/ folder
+# Uses TestingConfig → testing.db
+python -m unittest discover -s tests
+
+# Run a single test file
+python -m unittest tests/test_customers.py
+
+# --- Production ---
+# Explicitly run with ProductionConfig
+FLASK_APP="app:create_app('config.ProductionConfig')" flask run
+
+# --- Environment Variable Shortcut (optional) ---
+# Development
+export FLASK_APP="app:create_app('config.DevelopmentConfig')"
+flask run
+
+# Testing
+export FLASK_APP="app:create_app('config.TestingConfig')"
+python -m unittest discover -s tests
+
+# Production
+export FLASK_APP="app:create_app('config.ProductionConfig')"
+flask run
