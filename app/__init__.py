@@ -1,30 +1,27 @@
 from flask import Flask
 from app.extensions import db, ma, migrate, limiter, cache
-
-# import blueprints
 from app.blueprints.mechanics import mechanics_bp
 from app.blueprints.service_tickets import service_tickets_bp
 from app.blueprints.customers import customers_bp
 from app.blueprints.inventory import inventory_bp
 from flask_swagger_ui import get_swaggerui_blueprint
 
-# swagger config
-SWAGGER_URL = '/api/docs'  # swagger UI will be served here
-API_URL = '/static/swagger.yaml' # location of swagger file
+SWAGGER_URL = "/api/docs"
+API_URL = "/static/swagger.yaml"
 
-# create swagger blueprint
 swagger_blueprint = get_swaggerui_blueprint(
     SWAGGER_URL,
     API_URL,
-    config={'app_name': 'Mechanic Shop API'}
+    config={"app_name": "Mechanic Shop API"}
 )
 
-def create_app(config_class="config.Config"):
-    # tell flask explicitly where static files live
+def create_app(config_class="config.DevelopmentConfig"):
     app = Flask(__name__, static_folder="static")
 
-    # load config
+    # load config dynamically
     app.config.from_object(config_class)
+ # Debug print to confirm which DB is being used
+    print(f"[create_app] Loaded config: {config_class}, DB = {app.config['SQLALCHEMY_DATABASE_URI']}")
 
     # init extensions
     db.init_app(app)
