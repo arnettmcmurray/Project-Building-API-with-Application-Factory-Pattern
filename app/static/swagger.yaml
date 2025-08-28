@@ -1,415 +1,445 @@
 swagger: "2.0"
-
 info:
   title: "Mechanic Shop API"
-  description: "API to manage cars, customers, mechanics, service tickets, and inventory for the shop"
-  version: "0.0.1"
+  description: "API for managing customers, mechanics, inventory, and service tickets."
+  version: "1.0.0"
 
 host: "127.0.0.1:5000"
 schemes:
   - "http"
-
+basePath: "/"
 consumes:
   - "application/json"
 produces:
   - "application/json"
 
-# ======================================================
-# SECURITY
-# ======================================================
+# =========================
+# Security
+# =========================
 securityDefinitions:
   bearerAuth:
     type: apiKey
     name: Authorization
     in: header
+security:
+  - bearerAuth: []
 
-# ======================================================
-# ROUTES
-# ======================================================
+tags:
+  - name: Customers
+  - name: Mechanics
+  - name: Inventory
+  - name: Service Tickets
+
 paths:
-  # ===================== CUSTOMERS =====================
+  # =========================
+  # Customers
+  # =========================
   /customers:
     post:
       tags: [Customers]
-      summary: "Create customer"
+      summary: Create a customer
       parameters:
         - in: body
           name: body
           required: true
-          schema: { $ref: "#/definitions/CustomerPayload" }
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                example: "Alice Johnson"
+              email:
+                type: string
+                example: "alice@example.com"
       responses:
-        201: { description: "Customer created successfully" }
-
+        201:
+          description: Customer created
+        400:
+          description: Missing or invalid fields
     get:
       tags: [Customers]
-      summary: "Get all customers"
-      security: [{ bearerAuth: [] }]
-      responses:
-        200:
-          description: "Customer list"
-          schema: { $ref: "#/definitions/CustomersList" }
-
-  /customers/search:
-    get:
-      tags: [Customers]
-      summary: "Search customer by email"
-      security: [{ bearerAuth: [] }]
+      summary: Get all customers (optionally search by email)
       parameters:
-        - name: email
-          in: query
+        - in: query
+          name: email
           type: string
-          required: true
+          required: false
+          description: Search customer by email
       responses:
         200:
-          description: "Customer found"
-          schema: { $ref: "#/definitions/CustomerResponse" }
+          description: List of customers
 
   /customers/{id}:
     put:
       tags: [Customers]
-      summary: "Update customer"
-      security: [{ bearerAuth: [] }]
+      summary: Update a customer
       parameters:
-        - name: id
-          in: path
+        - in: path
+          name: id
           type: integer
           required: true
         - in: body
           name: body
           required: true
-          schema: { $ref: "#/definitions/CustomerPayload" }
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                example: "Alice Updated"
+              email:
+                type: string
+                example: "alice.updated@example.com"
       responses:
-        200: { description: "Updated" }
-
+        200:
+          description: Customer updated
+        404:
+          description: Customer not found
     delete:
       tags: [Customers]
-      summary: "Delete customer"
-      security: [{ bearerAuth: [] }]
+      summary: Delete a customer
       parameters:
-        - name: id
-          in: path
+        - in: path
+          name: id
           type: integer
           required: true
       responses:
-        200: { description: "Deleted" }
+        200:
+          description: Customer deleted
+        404:
+          description: Customer not found
 
-  # ===================== MECHANICS =====================
+  # =========================
+  # Mechanics
+  # =========================
+  /mechanics/ping:
+    get:
+      tags: [Mechanics]
+      summary: Ping route
+      responses:
+        200:
+          description: API is alive
+
   /mechanics/login:
     post:
       tags: [Mechanics]
-      summary: "Login mechanic"
+      summary: Mechanic login
       parameters:
         - in: body
           name: body
           required: true
-          schema: { $ref: "#/definitions/LoginCredentials" }
+          schema:
+            type: object
+            properties:
+              email:
+                type: string
+                example: "mike.wrench@example.com"
+              password:
+                type: string
+                example: "mike123"
       responses:
-        200: { description: "Login success" }
+        200:
+          description: Login successful, returns JWT
+        401:
+          description: Invalid credentials
 
   /mechanics:
     post:
       tags: [Mechanics]
-      summary: "Create mechanic"
+      summary: Create mechanic
       parameters:
         - in: body
           name: body
           required: true
-          schema: { $ref: "#/definitions/MechanicPayload" }
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                example: "Mike Wrench"
+              email:
+                type: string
+                example: "mike.wrench@example.com"
+              password:
+                type: string
+                example: "mike123"
+              specialty:
+                type: string
+                example: "Brakes"
       responses:
-        201: { description: "Created" }
+        201:
+          description: Mechanic created
+        409:
+          description: Email already exists
     get:
       tags: [Mechanics]
-      summary: "Get mechanics"
-      security: [{ bearerAuth: [] }]
+      summary: Get all mechanics
+      security:
+        - bearerAuth: []
       responses:
-        200: { description: "List" }
+        200:
+          description: List of mechanics
+        401:
+          description: Unauthorized
 
   /mechanics/{id}:
     put:
       tags: [Mechanics]
-      summary: "Update mechanic"
-      security: [{ bearerAuth: [] }]
+      summary: Update mechanic (self only)
+      security:
+        - bearerAuth: []
       parameters:
-        - name: id
-          in: path
+        - in: path
+          name: id
           type: integer
           required: true
         - in: body
           name: body
-          required: true
-          schema: { $ref: "#/definitions/MechanicPayload" }
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                example: "Mike Updated"
+              specialty:
+                type: string
+                example: "Engines"
+              password:
+                type: string
+                example: "newpass123"
       responses:
-        200: { description: "Updated" }
-
+        200:
+          description: Mechanic updated
+        403:
+          description: Forbidden
+        404:
+          description: Mechanic not found
     delete:
       tags: [Mechanics]
-      summary: "Delete mechanic"
-      security: [{ bearerAuth: [] }]
+      summary: Delete mechanic (self only)
+      security:
+        - bearerAuth: []
       parameters:
-        - name: id
-          in: path
+        - in: path
+          name: id
           type: integer
           required: true
       responses:
-        200: { description: "Deleted" }
-
-  /mechanics/ping:
-    get:
-      tags: [Mechanics]
-      summary: "Ping"
-      responses:
-        200: { description: "OK" }
+        200:
+          description: Mechanic deleted
+        403:
+          description: Forbidden
+        404:
+          description: Mechanic not found
 
   /mechanics/my-tickets:
     get:
       tags: [Mechanics]
-      summary: "My tickets"
-      security: [{ bearerAuth: [] }]
+      summary: Get mechanic's assigned tickets
+      security:
+        - bearerAuth: []
       responses:
-        200: { description: "List of tickets" }
+        200:
+          description: List of tickets
 
-  # ===================== SERVICE TICKETS =====================
+  /mechanics/top:
+    get:
+      tags: [Mechanics]
+      summary: Get mechanic with most tickets
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Mechanic with most tickets
+        404:
+          description: No mechanics found
+
+  /mechanics/ticket-count:
+    get:
+      tags: [Mechanics]
+      summary: List mechanics by ticket count
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Mechanics sorted by ticket count
+
+  # =========================
+  # Inventory
+  # =========================
+  /inventory:
+    post:
+      tags: [Inventory]
+      summary: Create inventory part
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: body
+          name: body
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                example: "Brake Pads"
+              price:
+                type: number
+                example: 50.0
+      responses:
+        201:
+          description: Part created
+        400:
+          description: Missing fields
+    get:
+      tags: [Inventory]
+      summary: Get all inventory parts
+      responses:
+        200:
+          description: List of parts
+
+  /inventory/{id}:
+    get:
+      tags: [Inventory]
+      summary: Get part by ID
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+      responses:
+        200:
+          description: Part details
+        404:
+          description: Part not found
+    put:
+      tags: [Inventory]
+      summary: Update part
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+        - in: body
+          name: body
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                example: "Rotor"
+              price:
+                type: number
+                example: 75.0
+      responses:
+        200:
+          description: Part updated
+        404:
+          description: Part not found
+    delete:
+      tags: [Inventory]
+      summary: Delete part
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+      responses:
+        200:
+          description: Part deleted
+        404:
+          description: Part not found
+
+  # =========================
+  # Service Tickets
+  # =========================
   /service_tickets:
     post:
       tags: [Service Tickets]
-      summary: "Create ticket"
+      summary: Create a service ticket
+      security:
+        - bearerAuth: []
       parameters:
         - in: body
           name: body
-          required: true
-          schema: { $ref: "#/definitions/TicketPayload" }
+          schema:
+            type: object
+            properties:
+              description:
+                type: string
+                example: "Brake replacement"
+              customer_id:
+                type: integer
+                example: 1
+              mechanic_id:
+                type: integer
+                example: 2
       responses:
-        201: { description: "Created" }
-
+        201:
+          description: Ticket created
+        400:
+          description: Missing fields
     get:
       tags: [Service Tickets]
-      summary: "Get all tickets"
+      summary: Get all service tickets
+      security:
+        - bearerAuth: []
       responses:
         200:
-          description: "List"
-          schema:
-            type: array
-            items: { $ref: "#/definitions/TicketResponse" }
+          description: List of tickets
 
-  /service_tickets/{ticket_id}:
+  /service_tickets/{id}:
     get:
       tags: [Service Tickets]
-      summary: "Get ticket"
+      summary: Get ticket by ID
       parameters:
-        - name: ticket_id
-          in: path
+        - in: path
+          name: id
           type: integer
           required: true
       responses:
-        200: { description: "Found" }
+        200:
+          description: Ticket details
+        404:
+          description: Ticket not found
     put:
       tags: [Service Tickets]
-      summary: "Update ticket"
+      summary: Update a service ticket
+      security:
+        - bearerAuth: []
       parameters:
-        - name: ticket_id
-          in: path
+        - in: path
+          name: id
           type: integer
           required: true
         - in: body
           name: body
-          required: true
-          schema: { $ref: "#/definitions/TicketPayload" }
+          schema:
+            type: object
+            properties:
+              description:
+                type: string
+                example: "Updated service description"
       responses:
-        200: { description: "Updated" }
+        200:
+          description: Ticket updated
+        404:
+          description: Ticket not found
     delete:
       tags: [Service Tickets]
-      summary: "Delete ticket"
+      summary: Delete a service ticket
+      security:
+        - bearerAuth: []
       parameters:
-        - name: ticket_id
-          in: path
+        - in: path
+          name: id
           type: integer
           required: true
       responses:
-        200: { description: "Deleted" }
-
-  /service_tickets/paginated:
-    get:
-      tags: [Service Tickets]
-      summary: "Get paginated"
-      parameters:
-        - name: page
-          in: query
-          type: integer
-        - name: per_page
-          in: query
-          type: integer
-      responses:
         200:
-          description: "Paginated list"
-          schema:
-            type: array
-            items: { $ref: "#/definitions/TicketResponse" }
-
-  # ===================== INVENTORY =====================
-  /inventory:
-    get:
-      tags: [Inventory]
-      summary: "Get inventory"
-      responses:
-        200:
-          description: "Inventory list"
-          schema: { $ref: "#/definitions/InventoryList" }
-
-# ======================================================
-# DEFINITIONS WITH EXAMPLES
-# ======================================================
-definitions:
-  # ---- Customers ----
-  CustomerPayload:
-    type: object
-    properties:
-      name: { type: string }
-      email: { type: string }
-      phone: { type: string }
-      car: { type: string }
-    example:
-      name: "Jane Doe"
-      email: "jane@example.com"
-      phone: "555-111-2222"
-      car: "Toyota Corolla"
-
-  CustomerResponse:
-    allOf:
-      - $ref: "#/definitions/CustomerPayload"
-      - type: object
-        properties:
-          id: { type: integer }
-    example:
-      id: 1
-      name: "Jane Doe"
-      email: "jane@example.com"
-      phone: "555-111-2222"
-      car: "Toyota Corolla"
-
-  CustomersList:
-    type: array
-    items: { $ref: "#/definitions/CustomerResponse" }
-    example:
-      - id: 1
-        name: "Jane Doe"
-        email: "jane@example.com"
-        phone: "555-111-2222"
-        car: "Toyota Corolla"
-
-  DeleteResponse:
-    type: object
-    properties:
-      message: { type: string }
-    example:
-      message: "Customer deleted successfully"
-
-  # ---- Mechanics ----
-  MechanicPayload:
-    type: object
-    properties:
-      name: { type: string }
-      email: { type: string }
-      specialty: { type: string }
-      password: { type: string }
-    example:
-      name: "Mike Wrench"
-      email: "mike@example.com"
-      specialty: "Engine Repair"
-      password: "test123"
-
-  MechanicResponse:
-    allOf:
-      - $ref: "#/definitions/MechanicPayload"
-      - type: object
-        properties:
-          id: { type: integer }
-    example:
-      id: 1
-      name: "Mike Wrench"
-      email: "mike@example.com"
-      specialty: "Engine Repair"
-
-  MechanicsList:
-    type: array
-    items: { $ref: "#/definitions/MechanicResponse" }
-    example:
-      - id: 1
-        name: "Mike Wrench"
-        email: "mike@example.com"
-        specialty: "Engine Repair"
-
-  LoginCredentials:
-    type: object
-    properties:
-      email: { type: string }
-      password: { type: string }
-    example:
-      email: "mike@example.com"
-      password: "test123"
-
-  LoginResponse:
-    type: object
-    properties:
-      token: { type: string }
-    example:
-      token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-
-  # ---- Service Tickets ----
-  TicketPayload:
-    type: object
-    properties:
-      description: { type: string }
-      customer_id: { type: integer }
-      mechanic_id: { type: integer }
-      date: { type: string, format: date-time }
-    example:
-      description: "Oil change and filter replacement"
-      customer_id: 1
-      mechanic_id: 1
-      date: "2025-08-27T10:00:00Z"
-
-  TicketResponse:
-    allOf:
-      - $ref: "#/definitions/TicketPayload"
-      - type: object
-        properties:
-          id: { type: integer }
-    example:
-      id: 1
-      description: "Oil change and filter replacement"
-      customer_id: 1
-      mechanic_id: 1
-      date: "2025-08-27T10:00:00Z"
-
-  TicketList:
-    type: array
-    items: { $ref: "#/definitions/TicketResponse" }
-    example:
-      - id: 1
-        description: "Oil change and filter replacement"
-        customer_id: 1
-        mechanic_id: 1
-        date: "2025-08-27T10:00:00Z"
-
-  # ---- Inventory ----
-  InventoryItem:
-    type: object
-    properties:
-      id: { type: integer }
-      name: { type: string }
-      quantity: { type: integer }
-    example:
-      id: 10
-      name: "Brake Pads"
-      quantity: 25
-
-  InventoryList:
-    type: array
-    items: { $ref: "#/definitions/InventoryItem" }
-    example:
-      - id: 10
-        name: "Brake Pads"
-        quantity: 25
-      - id: 11
-        name: "Oil Filter"
-        quantity: 50
+          description: Ticket deleted
+        404:
+          description: Ticket not found
