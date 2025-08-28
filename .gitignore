@@ -17,7 +17,7 @@ instance/*.db
 *.sqlite
 
 # === Postman / Collections ===
-Postman/*.json
+#oops how'd you get there
 
 # === IDE / Editor Files ===
 .vscode/
