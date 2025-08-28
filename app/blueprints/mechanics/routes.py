@@ -58,7 +58,7 @@ def login():
     mech = Mechanic.query.filter_by(email=creds["email"]).first()   # fixed lookup
 
     if mech and mech.check_password(creds["password"]):
-        token = encode_token(mech.id)   # token generated with mechanic id
+        token = encode_token(mech.id, "mechanic")   # pass id + role
         return jsonify({"token": token}), 200
 
     return jsonify({"error": "Invalid email or password"}), 401

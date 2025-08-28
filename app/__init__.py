@@ -33,7 +33,7 @@ def create_app(config_class="config.DevelopmentConfig"):
     # register blueprints
     app.register_blueprint(mechanics_bp)
     app.register_blueprint(service_tickets_bp)
-    app.register_blueprint(inventory_bp)
+    app.register_blueprint(inventory_bp, url_prefix="/inventory")
     app.register_blueprint(customers_bp)
     app.register_blueprint(swagger_blueprint, url_prefix=SWAGGER_URL)
 

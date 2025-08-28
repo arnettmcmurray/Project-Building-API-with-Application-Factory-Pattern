@@ -4,9 +4,13 @@ from app.extensions import db
 from app.models import Mechanic
 from app.utils.auth import encode_token
 
+
 class TestMechanics(unittest.TestCase):
     def setUp(self):
-        """Fresh app + db + starter mechanic"""
+        """
+        Fresh app + db before each test.
+        Creates one mechanic + token for protected routes.
+        """
         self.app = create_app("config.TestingConfig")
         self.client = self.app.test_client()
         with self.app.app_context():
@@ -28,6 +32,11 @@ class TestMechanics(unittest.TestCase):
         payload = {"name": "Bad", "password": "123", "specialty": "Wheels"}
         response = self.client.post("/mechanics", json=payload)
         self.assertEqual(response.status_code, 400)
+
+    def test_create_mechanic_duplicate_email(self):
+        payload = {"name": "Dup", "email": "mike@ex.com", "password": "123", "specialty": "Brakes"}
+        response = self.client.post("/mechanics", json=payload)
+        self.assertEqual(response.status_code, 409)
 
     # ---------- POST /mechanics/login ----------
     def test_login_valid(self):
@@ -69,4 +78,24 @@ class TestMechanics(unittest.TestCase):
 
     def test_delete_mechanic_no_token(self):
         response = self.client.delete("/mechanics/1")
+        self.assertEqual(response.status_code, 401)
+
+    # ---------- GET /mechanics/my-tickets ----------
+    def test_my_tickets_authorized(self):
+        headers = {"Authorization": f"Bearer {self.token}"}
+        response = self.client.get("/mechanics/my-tickets", headers=headers)
+        self.assertEqual(response.status_code, 200)
+
+    def test_my_tickets_no_token(self):
+        response = self.client.get("/mechanics/my-tickets")
+        self.assertEqual(response.status_code, 401)
+
+    # ---------- GET /mechanics/top ----------
+    def test_top_mechanic_no_token(self):
+        response = self.client.get("/mechanics/top")
+        self.assertEqual(response.status_code, 401)
+
+    # ---------- GET /mechanics/ticket-count ----------
+    def test_ticket_count_no_token(self):
+        response = self.client.get("/mechanics/ticket-count")
         self.assertEqual(response.status_code, 401)

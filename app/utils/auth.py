@@ -25,8 +25,8 @@ def token_required(fn):
         token = auth.split(" ", 1)[1].strip()
         try:
             payload = jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=["HS256"])
-            request.user_id = int(payload.get("sub"))
-            request.user_role = payload.get("role")
+            request.mechanic_id = int(payload.get("sub"))
+            request.mechanic_role = payload.get("role")
         except JWTError:
             return jsonify({"error": "Invalid or expired token"}), 401
 
