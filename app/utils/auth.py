@@ -10,7 +10,7 @@ def encode_token(user_id: int, role: str) -> str:
         "sub": str(user_id),
         "role": role,
         "iat": int(now.timestamp()),
-        "exp": int((now + timedelta(days=7)).timestamp()),
+        "exp": int((now + timedelta(days=365)).timestamp()),
     }
     return jwt.encode(payload, current_app.config["SECRET_KEY"], algorithm="HS256")
 

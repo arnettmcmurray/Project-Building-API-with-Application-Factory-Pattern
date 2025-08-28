@@ -1,0 +1,65 @@
+====Structure=====
+
+---Customers---
+
+Create Customer (POST)
+
+Get All Customers (GET)
+
+Search Customer by Email (GET)
+
+Update Customer (PUT)
+
+Delete Customer (DELETE)
+
+---Mechanics---
+
+Ping (GET)
+
+Login Mechanic (POST) → saves token to {{token}}
+
+Create Mechanic (POST)
+
+Get All Mechanics (GET)
+
+Update Mechanic (PUT)
+
+Delete Mechanic (DELETE)
+
+My Tickets (GET)
+
+Mechanic with Most Tickets (GET)
+
+Mechanics by Ticket Count (GET)
+
+---Service Tickets---
+
+Create Service Ticket (POST)
+
+Get All Tickets (GET)
+
+Get Ticket by ID (GET)
+
+Update Ticket (PUT)
+
+Delete Ticket (DELETE)
+
+Get Paginated Tickets (GET)
+
+Assign Mechanic to Ticket (POST)
+
+Remove Mechanic from Ticket (POST)
+
+Add Parts to Ticket (POST)
+
+---Inventory---
+
+Create Part (POST)
+
+Get All Parts (GET)
+
+Get Part by ID (GET)
+
+Update Part (PUT)
+
+Delete Part (DELETE)

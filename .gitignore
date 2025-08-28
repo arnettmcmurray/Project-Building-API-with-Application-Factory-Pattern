@@ -1,23 +1,35 @@
-# Python cache
+# === Python Cache ===
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
+*.pyd
+*.pdb
 
-# Virtual environment
+# === Virtual Environment ===
 venv/
 .env/
+.venv/
+*.egg-info/
 
-# Database
-instance/
-*.db
+# === Databases ===
+instance/*.db
+*.sqlite3
+*.sqlite
 
-# Migrations 
-migrations/versions/
+# === Postman / Collections ===
+Postman/*.json
 
-# IDE / OS files
+# === IDE / Editor Files ===
 .vscode/
 .idea/
 .DS_Store
 
-# Flask specific
+# === Flask Specific ===
+.flaskenv
 *.log
+
+# === Misc ===
+*.png
+*.jpg
+*.jpeg
+*.gif
