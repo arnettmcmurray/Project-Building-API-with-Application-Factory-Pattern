@@ -1,72 +1,72 @@
 swagger: "2.0"
 info:
   title: "Mechanic Shop API"
-  description: "API for managing customers, mechanics, inventory, and service tickets."
+  description: "API for managing customers, mechanics, parts, and service tickets."
   version: "1.0.0"
 
 host: "127.0.0.1:5000"
 schemes:
   - "http"
-basePath: "/"
+
 consumes:
   - "application/json"
 produces:
   - "application/json"
 
-# =========================
-# Security
-# =========================
+# ========================
+# SECURITY
+# ========================
 securityDefinitions:
   bearerAuth:
     type: apiKey
     name: Authorization
     in: header
-security:
-  - bearerAuth: []
+    description: "Enter: Bearer <token>"
 
+# ========================
+# TAGS (folders in UI)
+# ========================
 tags:
   - name: Customers
+    description: "Customer management"
   - name: Mechanics
-  - name: Inventory
+    description: "Mechanic registration, login, and management"
+  - name: Parts
+    description: "Parts (Inventory) management"
   - name: Service Tickets
+    description: "Service ticket creation and tracking"
 
+# ========================
+# PATHS
+# ========================
 paths:
-  # =========================
-  # Customers
-  # =========================
+  # ---- CUSTOMERS ----
   /customers:
     post:
       tags: [Customers]
-      summary: Create a customer
+      summary: Create a new customer
       parameters:
         - in: body
           name: body
           required: true
           schema:
             type: object
-            properties:
-              name:
-                type: string
-                example: "Alice Johnson"
-              email:
-                type: string
-                example: "alice@example.com"
+            example:
+              name: "Alice Johnson"
+              email: "alice@example.com"
       responses:
-        201:
+        "201":
           description: Customer created
-        400:
-          description: Missing or invalid fields
+        "400":
+          description: Bad Request (missing fields)
+        "409":
+          description: Conflict (email exists)
+
     get:
       tags: [Customers]
-      summary: Get all customers (optionally search by email)
-      parameters:
-        - in: query
-          name: email
-          type: string
-          required: false
-          description: Search customer by email
+      summary: Get all customers
       responses:
-        200:
+        "200":
           description: List of customers
 
   /customers/{id}:
@@ -74,203 +74,166 @@ paths:
       tags: [Customers]
       summary: Update a customer
       parameters:
-        - in: path
-          name: id
-          type: integer
+        - name: id
+          in: path
           required: true
+          type: integer
         - in: body
           name: body
-          required: true
           schema:
             type: object
-            properties:
-              name:
-                type: string
-                example: "Alice Updated"
-              email:
-                type: string
-                example: "alice.updated@example.com"
+            example:
+              name: "Alice Updated"
+              email: "alice.new@example.com"
       responses:
-        200:
+        "200":
           description: Customer updated
-        404:
+        "404":
           description: Customer not found
     delete:
       tags: [Customers]
       summary: Delete a customer
       parameters:
-        - in: path
-          name: id
-          type: integer
+        - name: id
+          in: path
           required: true
+          type: integer
       responses:
-        200:
+        "200":
           description: Customer deleted
-        404:
+        "404":
           description: Customer not found
 
-  # =========================
-  # Mechanics
-  # =========================
+  # ---- MECHANICS ----
   /mechanics/ping:
     get:
       tags: [Mechanics]
-      summary: Ping route
+      summary: Health check
       responses:
-        200:
-          description: API is alive
-
-  /mechanics/login:
-    post:
-      tags: [Mechanics]
-      summary: Mechanic login
-      parameters:
-        - in: body
-          name: body
-          required: true
-          schema:
-            type: object
-            properties:
-              email:
-                type: string
-                example: "mike.wrench@example.com"
-              password:
-                type: string
-                example: "mike123"
-      responses:
-        200:
-          description: Login successful, returns JWT
-        401:
-          description: Invalid credentials
+        "200":
+          description: Pong
 
   /mechanics:
     post:
       tags: [Mechanics]
-      summary: Create mechanic
+      summary: Create a mechanic
       parameters:
         - in: body
           name: body
-          required: true
           schema:
             type: object
-            properties:
-              name:
-                type: string
-                example: "Mike Wrench"
-              email:
-                type: string
-                example: "mike.wrench@example.com"
-              password:
-                type: string
-                example: "mike123"
-              specialty:
-                type: string
-                example: "Brakes"
+            example:
+              name: "Mike Wrench"
+              email: "mike.wrench@example.com"
+              password: "mike123"
+              specialty: "Brakes"
       responses:
-        201:
+        "201":
           description: Mechanic created
-        409:
-          description: Email already exists
+        "400":
+          description: Invalid input
+        "409":
+          description: Email exists
     get:
       tags: [Mechanics]
       summary: Get all mechanics
       security:
         - bearerAuth: []
       responses:
-        200:
+        "200":
           description: List of mechanics
-        401:
+        "401":
           description: Unauthorized
 
-  /mechanics/{id}:
-    put:
+  /mechanics/login:
+    post:
       tags: [Mechanics]
-      summary: Update mechanic (self only)
-      security:
-        - bearerAuth: []
+      summary: Login mechanic
       parameters:
-        - in: path
-          name: id
-          type: integer
-          required: true
         - in: body
           name: body
           schema:
             type: object
-            properties:
-              name:
-                type: string
-                example: "Mike Updated"
-              specialty:
-                type: string
-                example: "Engines"
-              password:
-                type: string
-                example: "newpass123"
+            example:
+              email: "mike.wrench@example.com"
+              password: "mike123"
       responses:
-        200:
-          description: Mechanic updated
-        403:
-          description: Forbidden
-        404:
-          description: Mechanic not found
-    delete:
+        "200":
+          description: Token returned
+        "401":
+          description: Invalid credentials
+
+  /mechanics/{id}:
+    put:
       tags: [Mechanics]
-      summary: Delete mechanic (self only)
+      summary: Update mechanic (self)
       security:
         - bearerAuth: []
       parameters:
-        - in: path
-          name: id
-          type: integer
+        - name: id
+          in: path
           required: true
+          type: integer
       responses:
-        200:
-          description: Mechanic deleted
-        403:
+        "200":
+          description: Mechanic updated
+        "403":
           description: Forbidden
-        404:
-          description: Mechanic not found
+    delete:
+      tags: [Mechanics]
+      summary: Delete mechanic (self)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: Mechanic deleted
+        "403":
+          description: Forbidden
 
   /mechanics/my-tickets:
     get:
       tags: [Mechanics]
-      summary: Get mechanic's assigned tickets
+      summary: View tickets assigned to mechanic
       security:
         - bearerAuth: []
       responses:
-        200:
+        "200":
           description: List of tickets
+        "401":
+          description: Unauthorized
 
   /mechanics/top:
     get:
       tags: [Mechanics]
-      summary: Get mechanic with most tickets
+      summary: Mechanic with most tickets
       security:
         - bearerAuth: []
       responses:
-        200:
-          description: Mechanic with most tickets
-        404:
+        "200":
+          description: Top mechanic
+        "404":
           description: No mechanics found
 
   /mechanics/ticket-count:
     get:
       tags: [Mechanics]
-      summary: List mechanics by ticket count
+      summary: Mechanics sorted by ticket count
       security:
         - bearerAuth: []
       responses:
-        200:
-          description: Mechanics sorted by ticket count
+        "200":
+          description: List with ticket counts
 
-  # =========================
-  # Inventory
-  # =========================
+  # ---- PARTS ----
   /inventory:
     post:
-      tags: [Inventory]
-      summary: Create inventory part
+      tags: [Parts]
+      summary: Create part
       security:
         - bearerAuth: []
       parameters:
@@ -278,88 +241,41 @@ paths:
           name: body
           schema:
             type: object
-            properties:
-              name:
-                type: string
-                example: "Brake Pads"
-              price:
-                type: number
-                example: 50.0
+            example:
+              name: "Brake Pads"
+              price: 50.0
       responses:
-        201:
+        "201":
           description: Part created
-        400:
-          description: Missing fields
+        "400":
+          description: Bad input
     get:
-      tags: [Inventory]
-      summary: Get all inventory parts
+      tags: [Parts]
+      summary: Get all parts
       responses:
-        200:
+        "200":
           description: List of parts
 
   /inventory/{id}:
     get:
-      tags: [Inventory]
+      tags: [Parts]
       summary: Get part by ID
       parameters:
-        - in: path
-          name: id
-          type: integer
+        - name: id
+          in: path
           required: true
-      responses:
-        200:
-          description: Part details
-        404:
-          description: Part not found
-    put:
-      tags: [Inventory]
-      summary: Update part
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: id
           type: integer
-          required: true
-        - in: body
-          name: body
-          schema:
-            type: object
-            properties:
-              name:
-                type: string
-                example: "Rotor"
-              price:
-                type: number
-                example: 75.0
       responses:
-        200:
-          description: Part updated
-        404:
-          description: Part not found
-    delete:
-      tags: [Inventory]
-      summary: Delete part
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          type: integer
-          required: true
-      responses:
-        200:
-          description: Part deleted
-        404:
-          description: Part not found
+        "200":
+          description: Part found
+        "404":
+          description: Not found
 
-  # =========================
-  # Service Tickets
-  # =========================
+  # ---- SERVICE TICKETS ----
   /service_tickets:
     post:
       tags: [Service Tickets]
-      summary: Create a service ticket
+      summary: Create service ticket
       security:
         - bearerAuth: []
       parameters:
@@ -367,79 +283,24 @@ paths:
           name: body
           schema:
             type: object
-            properties:
-              description:
-                type: string
-                example: "Brake replacement"
-              customer_id:
-                type: integer
-                example: 1
-              mechanic_id:
-                type: integer
-                example: 2
+            example:
+              description: "Brake replacement"
+              customer_id: 1
+              mechanic_id: 2
       responses:
-        201:
+        "201":
           description: Ticket created
-        400:
-          description: Missing fields
+        "400":
+          description: Invalid data
+        "401":
+          description: Unauthorized
     get:
       tags: [Service Tickets]
-      summary: Get all service tickets
+      summary: Get all tickets
       security:
         - bearerAuth: []
       responses:
-        200:
+        "200":
           description: List of tickets
-
-  /service_tickets/{id}:
-    get:
-      tags: [Service Tickets]
-      summary: Get ticket by ID
-      parameters:
-        - in: path
-          name: id
-          type: integer
-          required: true
-      responses:
-        200:
-          description: Ticket details
-        404:
-          description: Ticket not found
-    put:
-      tags: [Service Tickets]
-      summary: Update a service ticket
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          type: integer
-          required: true
-        - in: body
-          name: body
-          schema:
-            type: object
-            properties:
-              description:
-                type: string
-                example: "Updated service description"
-      responses:
-        200:
-          description: Ticket updated
-        404:
-          description: Ticket not found
-    delete:
-      tags: [Service Tickets]
-      summary: Delete a service ticket
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          type: integer
-          required: true
-      responses:
-        200:
-          description: Ticket deleted
-        404:
-          description: Ticket not found
+        "401":
+          description: Unauthorized
