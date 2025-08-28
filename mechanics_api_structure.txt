@@ -1,0 +1,42 @@
+/mechanic_api_project
+│
+├── /app
+│   ├── __init__.py          # create_app() lives here
+│   ├── extensions.py        # db, migrate, ma, limiter, cache, etc.
+│   ├── models.py            # all database models
+│   ├── schemas.py           # Marshmallow schemas
+│   │
+│   ├── /blueprints
+│   │   ├── /customers
+│   │   │   ├── __init__.py  # initialize Customer blueprint
+│   │   │   ├── routes.py    # Customer CRUD routes
+│   │   │   └── schemas.py   # Customer schemas
+│   │   │
+│   │   ├── /mechanics
+│   │   │   ├── __init__.py
+│   │   │   ├── routes.py    # Mechanic CRUD, login, my-tickets
+│   │   │   └── schemas.py
+│   │   │
+│   │   ├── /parts
+│   │   │   ├── __init__.py
+│   │   │   ├── routes.py    # Parts + Part Descriptions
+│   │   │   └── schemas.py
+│   │   │
+│   │   └── /tickets
+│   │       ├── __init__.py
+│   │       ├── routes.py    # Service Tickets (add mechanic, add part)
+│   │       └── schemas.py
+│
+├── /tests
+│   ├── test_customers.py
+│   ├── test_mechanics.py
+│   ├── test_parts.py
+│   └── test_tickets.py
+│
+├── /postman
+│   └── Mechanic_Shop_API_Final.postman_collection.json
+│
+├── config.py                 # config classes (dev/test/prod)
+├── app.py                    # entry point
+├── requirements.txt
+└── requirements-dev.txt      # dev-only deps (e.g. pygraphviz)
