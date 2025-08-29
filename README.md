@@ -1,106 +1,120 @@
-# Mechanic Shop API
+# Mechanics API
 
-A Flask + SQLAlchemy REST API for managing a mechanic shop.  
-Supports mechanics, customers, inventory (parts), and service tickets.  
-Built for Coding Temple assignments.
+## Features
 
----
+- Customer CRUD
+- Mechanic CRUD + login + ticket assignment
+- Parts and Part Descriptions
+- Service Tickets (with relationships to Customers, Mechanics, and Parts)
+- JWT-based authentication
+- Role-based access control
+- Swagger API Documentation
 
-## 🚀 Features
+## Tech Stack
 
-- **Mechanics**
-  - Create, login (JWT), update/delete self
-  - View assigned tickets
-  - Get mechanic with most tickets
-- **Customers**
-  - Create, search by email, update/delete
-- **Service Tickets**
-  - CRUD tickets
-  - Assign/remove mechanics
-  - Add parts to tickets
-  - Paginated ticket view
-- **Inventory**
-  - CRUD parts
-
----
-
-## 📦 Tech Stack
-
-- Python 3.11+
+- Python
 - Flask
-- SQLAlchemy 2.0
-- Marshmallow
-- Flask-Limiter (rate limiting)
+- Flask-SQLAlchemy
+- Flask-Marshmallow
+- Marshmallow-SQLAlchemy
+- Flask-Migrate
+- Flask-Limiter
 - Flask-Caching
-- python-jose (JWT)
+- Flask-Swagger-UI
+- python-jose (for JWT)
+- Gunicorn (for production server)
 
----
+## Setup (Local Development)
 
-## ⚙️ Setup
-
-1. **Clone the repo**
+1. Clone the repo.
+2. Create and activate a virtual environment.
+3. Install dependencies:
    ```bash
-   git clone <your-repo-url>
-   cd mechanic-api
-   Create and activate virtual environment
+   pip install -r requirements.txt
+   Set environment variables in a .env file:
    ```
 
-bash
-Copy
-Edit
-python -m venv venv
-source venv/bin/activate # Mac/Linux
-venv\Scripts\activate # Windows
-Install dependencies
+ini
+Copy code
+SQLALCHEMY_DATABASE_URI=mysql+mysqlconnector://username:password@localhost/mechanics_api
+SECRET_KEY=your_secret_key
+Initialize the database:
 
 bash
-Copy
-Edit
-pip install -r requirements.txt
-Seed the database
+Copy code
+flask db init
+flask db migrate
+flask db upgrade
+Run the app:
 
 bash
-Copy
-Edit
-python seed.py
-Run the server
-
-bash
-Copy
-Edit
+Copy code
 flask run
-Server starts on: http://127.0.0.1:5000
+Postman Workflow
+Use Postman to test:
 
-🔑 Authentication
-Login via /mechanics/login to receive a JWT.
+/customers (CRUD)
 
-Pass token in headers for protected routes:
+/mechanics (CRUD, login, my-tickets)
 
-makefile
-Copy
-Edit
-Authorization: Bearer <your_token>
-🧪 Testing with Postman
-Import MechanicAPI_Assignment.postman_collection.json
+/parts (CRUD)
 
-Import MechanicAPI_env.postman_environment.json
+/tickets (CRUD, mechanic + part assignments)
 
-Select MechanicAPI Environment in Postman.
+Authentication:
 
-Run Mechanics → Login Mechanic to get token.
+Login via /mechanics/login to receive JWT token.
 
-Token auto-fills → test Customers, Tickets, Inventory endpoints.
+Use token as Bearer Auth in subsequent requests.
 
-🗂 ERD
-The project includes an auto-generated ERD (erd.png) showing tables and relationships.
+Entity-Relationship Diagram (ERD)
+(Include image of ERD here)
 
-📌 Notes
-Database resets each time you run seed.py
+Notes
+JWT tokens expire after 30 minutes.
 
-Default seeded accounts:
+Role-based access control is in place for certain endpoints.
 
-Admin User → admin@example.com / password123
+Swagger documentation available at /api/docs.
 
-Mike Wrench → mike.wrench@example.com / mike123
+Deployment (Render + GitHub Actions)
+This API is live at:
+👉 https://mechanics-api.onrender.com
 
-Sarah Bolt → sarah.bolt@example.com / sarah123
+Setup on Render
+Create a new Web Service on Render.
+
+Connect this repo.
+
+Set the Start Command:
+
+nginx
+Copy code
+gunicorn flask_app:app
+Add Environment Variables:
+
+SQLALCHEMY_DATABASE_URI = External DB URL from Render Postgres
+
+SECRET_KEY = secret key for JWT
+
+Continuous Deployment
+Each push to main triggers GitHub Actions CI.
+
+On success, Render redeploys automatically.
+
+Swagger Docs
+Swagger UI available at:
+👉 https://mechanics-api.onrender.com/api/docs
+
+pgsql
+Copy code
+
+---
+
+### Commit (clean checkpoint):
+
+```bash
+git add README.md
+git commit -m "Update README with Render deployment instructions"
+git push origin main
+```
