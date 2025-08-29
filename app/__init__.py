@@ -37,4 +37,8 @@ def create_app(config_class="config.DevelopmentConfig"):
     app.register_blueprint(customers_bp)
     app.register_blueprint(swagger_blueprint, url_prefix=SWAGGER_URL)
 
+    @app.route("/")
+    def home():
+        return {"message": "Mechanics API is live 🚀"}, 200
+
     return app
