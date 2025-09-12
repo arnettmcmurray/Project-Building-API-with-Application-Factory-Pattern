@@ -307,3 +307,79 @@ paths:
           description: List of tickets
         "401":
           description: Unauthorized
+
+definitions:
+  Customer:
+    type: object
+    required:
+      - name
+      - email
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      email:
+        type: string
+      phone:
+        type: string
+      car:
+        type: string
+
+  Mechanic:
+    type: object
+    required:
+      - name
+      - email
+      - password
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      email:
+        type: string
+      password:
+        type: string
+      specialty:
+        type: string
+
+  Inventory:
+    type: object
+    required:
+      - name
+      - price
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      price:
+        type: number
+        format: float
+
+  ServiceTicket:
+    type: object
+    required:
+      - description
+      - customer_id
+    properties:
+      id:
+        type: integer
+      description:
+        type: string
+      date:
+        type: string
+        format: date-time
+      status:
+        type: string
+      customer_id:
+        type: integer
+      mechanics:
+        type: array
+        items:
+          $ref: "#/definitions/Mechanic"
+      parts:
+        type: array
+        items:
+          $ref: "#/definitions/Inventory"
