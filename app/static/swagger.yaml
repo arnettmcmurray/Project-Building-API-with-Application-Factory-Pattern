@@ -51,10 +51,12 @@ paths:
           name: body
           required: true
           schema:
-            type: object
+            $ref: "#/definitions/Customer"
             example:
               name: "Alice Johnson"
               email: "alice@example.com"
+              phone: "555-333-4444"
+              car: "Honda Civic"
       responses:
         "201":
           description: Customer created
@@ -82,7 +84,7 @@ paths:
         - in: body
           name: body
           schema:
-            type: object
+            $ref: "#/definitions/Customer"
             example:
               name: "Alice Updated"
               email: "alice.new@example.com"
@@ -122,7 +124,7 @@ paths:
         - in: body
           name: body
           schema:
-            type: object
+            $ref: "#/definitions/Mechanic"
             example:
               name: "Mike Wrench"
               email: "mike.wrench@example.com"
@@ -154,7 +156,7 @@ paths:
         - in: body
           name: body
           schema:
-            type: object
+            $ref: "#/definitions/Login"
             example:
               email: "mike.wrench@example.com"
               password: "mike123"
@@ -241,7 +243,7 @@ paths:
         - in: body
           name: body
           schema:
-            type: object
+            $ref: "#/definitions/Inventory"
             example:
               name: "Brake Pads"
               price: 50.0
@@ -283,7 +285,7 @@ paths:
         - in: body
           name: body
           schema:
-            type: object
+            $ref: "#/definitions/ServiceTicket"
             example:
               description: "Brake replacement"
               customer_id: 1
