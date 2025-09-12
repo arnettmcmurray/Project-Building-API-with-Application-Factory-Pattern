@@ -5,10 +5,8 @@ info:
   version: "1.0.0"
 
 host: "mechanics-api.onrender.com"
-
 schemes:
   - "https"
-
 consumes:
   - "application/json"
 produces:
@@ -25,7 +23,7 @@ securityDefinitions:
     description: "Enter: Bearer <token>"
 
 # ========================
-# TAGS (folders in UI)
+# TAGS
 # ========================
 tags:
   - name: Customers
@@ -52,19 +50,13 @@ paths:
           required: true
           schema:
             $ref: "#/definitions/Customer"
-            example:
-              name: "Alice Johnson"
-              email: "alice@example.com"
-              phone: "555-333-4444"
-              car: "Honda Civic"
       responses:
         "201":
           description: Customer created
         "400":
-          description: Bad Request (missing fields)
+          description: Bad Request
         "409":
           description: Conflict (email exists)
-
     get:
       tags: [Customers]
       summary: Get all customers
@@ -85,9 +77,6 @@ paths:
           name: body
           schema:
             $ref: "#/definitions/Customer"
-            example:
-              name: "Alice Updated"
-              email: "alice.new@example.com"
       responses:
         "200":
           description: Customer updated
@@ -108,14 +97,6 @@ paths:
           description: Customer not found
 
   # ---- MECHANICS ----
-  /mechanics/ping:
-    get:
-      tags: [Mechanics]
-      summary: Health check
-      responses:
-        "200":
-          description: Pong
-
   /mechanics:
     post:
       tags: [Mechanics]
@@ -125,11 +106,6 @@ paths:
           name: body
           schema:
             $ref: "#/definitions/Mechanic"
-            example:
-              name: "Mike Wrench"
-              email: "mike.wrench@example.com"
-              password: "mike123"
-              specialty: "Brakes"
       responses:
         "201":
           description: Mechanic created
@@ -157,9 +133,6 @@ paths:
           name: body
           schema:
             $ref: "#/definitions/Login"
-            example:
-              email: "mike.wrench@example.com"
-              password: "mike123"
       responses:
         "200":
           description: Token returned
@@ -244,9 +217,6 @@ paths:
           name: body
           schema:
             $ref: "#/definitions/Inventory"
-            example:
-              name: "Brake Pads"
-              price: 50.0
       responses:
         "201":
           description: Part created
@@ -286,10 +256,6 @@ paths:
           name: body
           schema:
             $ref: "#/definitions/ServiceTicket"
-            example:
-              description: "Brake replacement"
-              customer_id: 1
-              mechanic_id: 2
       responses:
         "201":
           description: Ticket created
@@ -308,6 +274,9 @@ paths:
         "401":
           description: Unauthorized
 
+# ========================
+# DEFINITIONS
+# ========================
 definitions:
   Customer:
     type: object
@@ -320,12 +289,16 @@ definitions:
         readOnly: true
       name:
         type: string
+        example: "Alice Johnson"
       email:
         type: string
+        example: "alice@example.com"
       phone:
         type: string
+        example: "555-333-4444"
       car:
         type: string
+        example: "Honda Civic"
 
   Mechanic:
     type: object
@@ -339,13 +312,17 @@ definitions:
         readOnly: true
       name:
         type: string
+        example: "Mike Wrench"
       email:
         type: string
+        example: "mike.wrench@example.com"
       password:
         type: string
         writeOnly: true
+        example: "mike123"
       specialty:
         type: string
+        example: "Brakes"
 
   Inventory:
     type: object
@@ -358,9 +335,11 @@ definitions:
         readOnly: true
       name:
         type: string
+        example: "Brake Pads"
       price:
         type: number
         format: float
+        example: 50.0
 
   ServiceTicket:
     type: object
@@ -373,14 +352,17 @@ definitions:
         readOnly: true
       description:
         type: string
+        example: "Brake replacement"
       date:
         type: string
         format: date-time
         readOnly: true
       status:
         type: string
+        example: "OPEN"
       customer_id:
         type: integer
+        example: 1
       mechanics:
         type: array
         items:
@@ -400,5 +382,7 @@ definitions:
     properties:
       email:
         type: string
+        example: "mike.wrench@example.com"
       password:
         type: string
+        example: "mike123"
