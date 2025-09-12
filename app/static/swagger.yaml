@@ -317,6 +317,7 @@ definitions:
     properties:
       id:
         type: integer
+        readOnly: true
       name:
         type: string
       email:
@@ -335,12 +336,14 @@ definitions:
     properties:
       id:
         type: integer
+        readOnly: true
       name:
         type: string
       email:
         type: string
       password:
         type: string
+        writeOnly: true
       specialty:
         type: string
 
@@ -352,6 +355,7 @@ definitions:
     properties:
       id:
         type: integer
+        readOnly: true
       name:
         type: string
       price:
@@ -366,11 +370,13 @@ definitions:
     properties:
       id:
         type: integer
+        readOnly: true
       description:
         type: string
       date:
         type: string
         format: date-time
+        readOnly: true
       status:
         type: string
       customer_id:
@@ -379,10 +385,13 @@ definitions:
         type: array
         items:
           $ref: "#/definitions/Mechanic"
+        readOnly: true
       parts:
         type: array
         items:
           $ref: "#/definitions/Inventory"
+        readOnly: true
+
   Login:
     type: object
     required:
