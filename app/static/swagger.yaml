@@ -425,16 +425,16 @@ definitions:
   Customer:
     type: object
     properties:
-      id: { type: integer, example: 1 }
+      id: { type: integer, readOnly: true }
       name: { type: string, example: "John Doe" }
       email: { type: string, example: "john@example.com" }
       phone: { type: string, example: "555-1111" }
-      car: { type: string, example: "Honda Civic" }
+      car: { type: string, example: "Honda Civic" };
 
   Mechanic:
     type: object
     properties:
-      id: { type: integer, example: 1 }
+      id: { type: integer, readOnly: true }
       name: { type: string, example: "Mike Wrench" }
       email: { type: string, example: "mike@example.com" }
       password: { type: string, example: "password1" }
@@ -443,14 +443,14 @@ definitions:
   Inventory:
     type: object
     properties:
-      id: { type: integer, example: 1 }
+      id: { type: integer, readOnly: true }
       name: { type: string, example: "Brake Pads" }
       price: { type: number, format: float, example: 59.99 }
 
   ServiceTicket:
     type: object
     properties:
-      id: { type: integer, example: 1 }
+      id: { type: integer, readOnly: true }
       customer_id: { type: integer, example: 1 }
       description: { type: string, example: "Oil change" }
       status: { type: string, example: "Open" }

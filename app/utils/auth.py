@@ -19,10 +19,12 @@ def token_required(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
         auth = request.headers.get("Authorization", "")
-        if not auth.startswith("Bearer "):
-            return jsonify({"error": "Missing or invalid Authorization header"}), 401
+        if not auth:
+            return jsonify({"error": "Missing Authorization header"}), 401
 
-        token = auth.split(" ", 1)[1].strip()
+        # Handle both "Bearer <token>" and "<token>"
+        token = auth.split(" ")[-1].strip()
+
         try:
             payload = jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=["HS256"])
             request.mechanic_id = int(payload.get("sub"))
