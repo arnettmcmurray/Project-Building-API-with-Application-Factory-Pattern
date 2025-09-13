@@ -23,7 +23,7 @@ securityDefinitions:
     description: "Enter: Bearer <token>"
 
 # ========================
-# TAGS
+# TAGS (folders in UI)
 # ========================
 tags:
   - name: Customers
@@ -51,18 +51,14 @@ paths:
           schema:
             $ref: "#/definitions/Customer"
       responses:
-        "201":
-          description: Customer created
-        "400":
-          description: Bad Request
-        "409":
-          description: Conflict (email exists)
+        "201": { description: Customer created }
+        "400": { description: Bad Request }
+        "409": { description: Conflict (email exists) }
     get:
       tags: [Customers]
       summary: Get all customers
       responses:
-        "200":
-          description: List of customers
+        "200": { description: List of customers }
 
   /customers/{id}:
     put:
@@ -78,10 +74,8 @@ paths:
           schema:
             $ref: "#/definitions/Customer"
       responses:
-        "200":
-          description: Customer updated
-        "404":
-          description: Customer not found
+        "200": { description: Customer updated }
+        "404": { description: Customer not found }
     delete:
       tags: [Customers]
       summary: Delete a customer
@@ -91,10 +85,8 @@ paths:
           required: true
           type: integer
       responses:
-        "200":
-          description: Customer deleted
-        "404":
-          description: Customer not found
+        "200": { description: Customer deleted }
+        "404": { description: Customer not found }
 
   # ---- MECHANICS ----
   /mechanics:
@@ -107,22 +99,16 @@ paths:
           schema:
             $ref: "#/definitions/Mechanic"
       responses:
-        "201":
-          description: Mechanic created
-        "400":
-          description: Invalid input
-        "409":
-          description: Email exists
+        "201": { description: Mechanic created }
+        "400": { description: Invalid input }
+        "409": { description: Email exists }
     get:
       tags: [Mechanics]
       summary: Get all mechanics
-      security:
-        - bearerAuth: []
+      security: [{ bearerAuth: [] }]
       responses:
-        "200":
-          description: List of mechanics
-        "401":
-          description: Unauthorized
+        "200": { description: List of mechanics }
+        "401": { description: Unauthorized }
 
   /mechanics/login:
     post:
@@ -134,100 +120,28 @@ paths:
           schema:
             $ref: "#/definitions/Login"
       responses:
-        "200":
-          description: Token returned
-        "401":
-          description: Invalid credentials
+        "200": { description: Token returned }
+        "401": { description: Invalid credentials }
 
-  /mechanics/{id}:
-    put:
-      tags: [Mechanics]
-      summary: Update mechanic (self)
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          type: integer
-      responses:
-        "200":
-          description: Mechanic updated
-        "403":
-          description: Forbidden
-    delete:
-      tags: [Mechanics]
-      summary: Delete mechanic (self)
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          type: integer
-      responses:
-        "200":
-          description: Mechanic deleted
-        "403":
-          description: Forbidden
-
-  /mechanics/my-tickets:
-    get:
-      tags: [Mechanics]
-      summary: View tickets assigned to mechanic
-      security:
-        - bearerAuth: []
-      responses:
-        "200":
-          description: List of tickets
-        "401":
-          description: Unauthorized
-
-  /mechanics/top:
-    get:
-      tags: [Mechanics]
-      summary: Mechanic with most tickets
-      security:
-        - bearerAuth: []
-      responses:
-        "200":
-          description: Top mechanic
-        "404":
-          description: No mechanics found
-
-  /mechanics/ticket-count:
-    get:
-      tags: [Mechanics]
-      summary: Mechanics sorted by ticket count
-      security:
-        - bearerAuth: []
-      responses:
-        "200":
-          description: List with ticket counts
-
-  # ---- PARTS ----
+  # ---- PARTS (Inventory) ----
   /inventory:
     post:
       tags: [Parts]
       summary: Create part
-      security:
-        - bearerAuth: []
+      security: [{ bearerAuth: [] }]
       parameters:
         - in: body
           name: body
           schema:
-            $ref: "#/definitions/Inventory"
+            $ref: "#/definitions/Part"
       responses:
-        "201":
-          description: Part created
-        "400":
-          description: Bad input
+        "201": { description: Part created }
+        "400": { description: Bad input }
     get:
       tags: [Parts]
       summary: Get all parts
       responses:
-        "200":
-          description: List of parts
+        "200": { description: List of parts }
 
   /inventory/{id}:
     get:
@@ -239,40 +153,31 @@ paths:
           required: true
           type: integer
       responses:
-        "200":
-          description: Part found
-        "404":
-          description: Not found
+        "200": { description: Part found }
+        "404": { description: Not found }
 
   # ---- SERVICE TICKETS ----
   /service_tickets:
     post:
       tags: [Service Tickets]
       summary: Create service ticket
-      security:
-        - bearerAuth: []
+      security: [{ bearerAuth: [] }]
       parameters:
         - in: body
           name: body
           schema:
             $ref: "#/definitions/ServiceTicket"
       responses:
-        "201":
-          description: Ticket created
-        "400":
-          description: Invalid data
-        "401":
-          description: Unauthorized
+        "201": { description: Ticket created }
+        "400": { description: Invalid data }
+        "401": { description: Unauthorized }
     get:
       tags: [Service Tickets]
       summary: Get all tickets
-      security:
-        - bearerAuth: []
+      security: [{ bearerAuth: [] }]
       responses:
-        "200":
-          description: List of tickets
-        "401":
-          description: Unauthorized
+        "200": { description: List of tickets }
+        "401": { description: Unauthorized }
 
 # ========================
 # DEFINITIONS
@@ -280,62 +185,54 @@ paths:
 definitions:
   Customer:
     type: object
-    required:
-      - name
-      - email
+    required: [name, email, phone, car]
     properties:
       id:
         type: integer
         readOnly: true
       name:
         type: string
-        example: "Alice Johnson"
+        example: Alice Johnson
       email:
         type: string
-        example: "alice@example.com"
+        example: alice@example.com
       phone:
         type: string
-        example: "555-333-4444"
+        example: 555-333-4444
       car:
         type: string
-        example: "Honda Civic"
+        example: Honda Civic
 
   Mechanic:
     type: object
-    required:
-      - name
-      - email
-      - password
+    required: [name, email, password, specialty]
     properties:
       id:
         type: integer
         readOnly: true
       name:
         type: string
-        example: "Mike Wrench"
+        example: Mike Wrench
       email:
         type: string
-        example: "mike.wrench@example.com"
+        example: mike.wrench@example.com
       password:
         type: string
-        writeOnly: true
-        example: "mike123"
+        example: mike123
       specialty:
         type: string
-        example: "Brakes"
+        example: Brakes
 
-  Inventory:
+  Part:
     type: object
-    required:
-      - name
-      - price
+    required: [name, price]
     properties:
       id:
         type: integer
         readOnly: true
       name:
         type: string
-        example: "Brake Pads"
+        example: Brake Pads
       price:
         type: number
         format: float
@@ -343,46 +240,28 @@ definitions:
 
   ServiceTicket:
     type: object
-    required:
-      - description
-      - customer_id
+    required: [description, customer_id, mechanic_id]
     properties:
       id:
         type: integer
         readOnly: true
       description:
         type: string
-        example: "Brake replacement"
-      date:
-        type: string
-        format: date-time
-        readOnly: true
-      status:
-        type: string
-        example: "OPEN"
+        example: Brake replacement
       customer_id:
         type: integer
         example: 1
-      mechanics:
-        type: array
-        items:
-          $ref: "#/definitions/Mechanic"
-        readOnly: true
-      parts:
-        type: array
-        items:
-          $ref: "#/definitions/Inventory"
-        readOnly: true
+      mechanic_id:
+        type: integer
+        example: 2
 
   Login:
     type: object
-    required:
-      - email
-      - password
+    required: [email, password]
     properties:
       email:
         type: string
-        example: "mike.wrench@example.com"
+        example: mike.wrench@example.com
       password:
         type: string
-        example: "mike123"
+        example: mike123
