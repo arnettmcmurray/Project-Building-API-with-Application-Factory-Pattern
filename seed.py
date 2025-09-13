@@ -1,8 +1,5 @@
-# === seed.py ===
-# Safe seed script: only inserts if tables are empty.
-
 from app import create_app, db
-from app.models import Customer, Mechanic, Part, ServiceTicket
+from app.models import Customer, Mechanic, Inventory, ServiceTicket, ServiceTicketInventory
 
 app = create_app()
 
@@ -15,21 +12,35 @@ with app.app_context():
 
     # --- Mechanics ---
     if Mechanic.query.count() == 0:
-        m1 = Mechanic(name="Mike Wrench", email="mike@example.com", password_hash="hashed_pw1", specialty="Engine")
-        m2 = Mechanic(name="Sara Bolt", email="sara@example.com", password_hash="hashed_pw2", specialty="Brakes")
+        m1 = Mechanic(name="Mike Wrench", email="mike@example.com", specialty="Engine")
+        m1.set_password("password1")  # hashed
+        m2 = Mechanic(name="Sara Bolt", email="sara@example.com", specialty="Brakes")
+        m2.set_password("password2")
         db.session.add_all([m1, m2])
 
-    # --- Parts ---
-    if Part.query.count() == 0:
-        p1 = Part(name="Brake Pads", description="Front brake pads set", quantity=10)
-        p2 = Part(name="Oil Filter", description="Standard oil filter", quantity=25)
+    # --- Inventory ---
+    if Inventory.query.count() == 0:
+        p1 = Inventory(name="Brake Pads", price=59.99)
+        p2 = Inventory(name="Oil Filter", price=14.99)
         db.session.add_all([p1, p2])
+
+    db.session.commit()  # commit so IDs exist
 
     # --- Service Tickets ---
     if ServiceTicket.query.count() == 0:
-        t1 = ServiceTicket(customer_id=1, mechanic_id=1, description="Oil change", status="open")
-        t2 = ServiceTicket(customer_id=2, mechanic_id=2, description="Brake replacement", status="open")
+        t1 = ServiceTicket(customer_id=1, description="Oil change", status="Open")
+        t2 = ServiceTicket(customer_id=2, description="Brake replacement", status="Open")
         db.session.add_all([t1, t2])
+        db.session.commit()
+
+        # link mechanics to tickets
+        t1.mechanics.append(Mechanic.query.get(1))  # John → Mike
+        t2.mechanics.append(Mechanic.query.get(2))  # Jane → Sara
+
+        # link inventory (with quantity) to tickets
+        link1 = ServiceTicketInventory(ticket=t1, part=Inventory.query.get(2), quantity=1)  # Oil Filter
+        link2 = ServiceTicketInventory(ticket=t2, part=Inventory.query.get(1), quantity=4)  # Brake Pads
+        db.session.add_all([link1, link2])
 
     db.session.commit()
-    print("Database seeded (skipped if already populated).")
+    print(" Database seeded with linked sample data (skipped if already populated).")
