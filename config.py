@@ -23,11 +23,12 @@ class TestingConfig:
 
 
 class ProductionConfig:
-    SQLALCHEMY_DATABASE_URI = "sqlite:///production.db"
+    SQLALCHEMY_DATABASE_URI = "postgresql://mechanics_db_user:AVdHtfDtI3CV81LxdHv081rlkAS3wWsq@dpg-d2oebs6r433s73ct6rj0-a/mechanics_db"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SECRET_KEY = "prodsecretkey"
+    SECRET_KEY = "prodsecrectkey"
 
     RATELIMIT_STORAGE_URI = "memory://"
     RATELIMIT_DEFAULT = "100 per minute"
     CACHE_TYPE = "SimpleCache"
     CACHE_DEFAULT_TIMEOUT = 300
+
