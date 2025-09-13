@@ -10,6 +10,7 @@ venv/
 .env/
 .venv/
 *.egg-info/
+.env
 
 # === Databases ===
 instance/*.db

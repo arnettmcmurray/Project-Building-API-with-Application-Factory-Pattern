@@ -1,7 +1,12 @@
-class DevelopmentConfig:
-    SQLALCHEMY_DATABASE_URI = "sqlite:///mechanic_shop.db"
+import os
+from dotenv import load_dotenv
+
+# Load .env file if present (local dev only)
+load_dotenv()
+
+class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SECRET_KEY = "supersecretkey123"
+    SECRET_KEY = os.getenv("SECRET_KEY", "dev_key")
 
     # Optional: rate limit + cache
     RATELIMIT_STORAGE_URI = "memory://"
@@ -10,25 +15,20 @@ class DevelopmentConfig:
     CACHE_DEFAULT_TIMEOUT = 60
 
 
-class TestingConfig:
-    SQLALCHEMY_DATABASE_URI = "sqlite:///testing.db"
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SECRET_KEY = "testsecretkey"
+class DevelopmentConfig(Config):
+    SQLALCHEMY_DATABASE_URI = os.getenv(
+        "DEV_DATABASE_URL", "sqlite:///mechanic_shop.db"
+    )
 
+
+class TestingConfig(Config):
+    SQLALCHEMY_DATABASE_URI = os.getenv(
+        "TEST_DATABASE_URL", "sqlite:///testing.db"
+    )
     TESTING = True
-    RATELIMIT_STORAGE_URI = "memory://"
-    RATELIMIT_DEFAULT = "10 per minute"
-    CACHE_TYPE = "SimpleCache"
-    CACHE_DEFAULT_TIMEOUT = 60
 
 
-class ProductionConfig:
-    SQLALCHEMY_DATABASE_URI = "postgresql://mechanics_db_user:AVdHtfDtI3CV81LxdHv081rlkAS3wWsq@dpg-d2oebs6r433s73ct6rj0-a.oregon-postgres.render.com/mechanics_db"
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SECRET_KEY = "prodsecrectkey"
-
-    RATELIMIT_STORAGE_URI = "memory://"
+class ProductionConfig(Config):
+    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
     RATELIMIT_DEFAULT = "100 per minute"
-    CACHE_TYPE = "SimpleCache"
     CACHE_DEFAULT_TIMEOUT = 300
-
