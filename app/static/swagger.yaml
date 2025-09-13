@@ -222,6 +222,23 @@ paths:
         "401":
           description: Unauthorized
 
+  # ---- AUTH ----
+  /login:
+    post:
+      tags: [Mechanics]
+      summary: Login a mechanic
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/Login"
+      responses:
+        "200":
+          description: Successful login (returns JWT token)
+        "400":
+          description: Invalid credentials
+
 # ================================
 # DEFINITIONS
 # ================================
