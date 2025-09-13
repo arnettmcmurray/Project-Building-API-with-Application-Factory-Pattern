@@ -63,7 +63,7 @@ get:
   tags: [Customers]
   summary: Get all customers
   security:
-    - bearerAuth: []
+    - BearerAuth: []
   responses:
     "200": { description: List of customers }
 
@@ -112,7 +112,7 @@ get:
     get:
       tags: [Mechanics]
       summary: Get all mechanics
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       responses:
         "200": { description: List of mechanics }
         "401": { description: Unauthorized }
@@ -135,7 +135,7 @@ get:
     post:
       tags: [Parts]
       summary: Create part
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       parameters:
         - in: body
           name: body
@@ -168,7 +168,7 @@ get:
     post:
       tags: [Service Tickets]
       summary: Create service ticket
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       parameters:
         - in: body
           name: body
@@ -181,7 +181,7 @@ get:
     get:
       tags: [Service Tickets]
       summary: Get all tickets
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       responses:
         "200": { description: List of tickets }
         "401": { description: Unauthorized }
