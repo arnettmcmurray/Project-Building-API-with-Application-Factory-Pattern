@@ -23,7 +23,7 @@ class TestingConfig:
 
 
 class ProductionConfig:
-    SQLALCHEMY_DATABASE_URI = "postgresql://mechanics_db_user:AVdHtfDtI3CV81LxdHv081rlkAS3wWsq@dpg-d2oebs6r433s73ct6rj0-a/mechanics_db"
+    SQLALCHEMY_DATABASE_URI = "postgresql://mechanics_db_user:AVdHtfDtI3CV81LxdHv081rlkAS3wWsq@dpg-d2oebs6r433s73ct6rj0-a.oregon-postgres.render.com/mechanics_db"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = "prodsecrectkey"
 
