@@ -17,11 +17,13 @@ swagger_blueprint = get_swaggerui_blueprint(
 
 def create_app(config_class="config.DevelopmentConfig"):
     app = Flask(__name__, static_folder="static")
+    
+    if isinstance(config_class, str):
+        app.config.from_object(config_class)
+    else:
+        app.config.from_object(config_class)
 
-    # load config dynamically
-    app.config.from_object(config_class)
- # Debug print to confirm which DB is being used
-    print(f"[create_app] Loaded config: {config_class}, DB = {app.config['SQLALCHEMY_DATABASE_URI']}")
+    print(f"[create_app] Loaded config: {config_class}, DB = {app.config.get('SQLALCHEMY_DATABASE_URI')}")
 
     # init extensions
     db.init_app(app)
