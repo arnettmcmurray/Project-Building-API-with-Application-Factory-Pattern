@@ -1,8 +1,4 @@
 import os
-from dotenv import load_dotenv
-
-# Load .env if present
-load_dotenv()
 
 class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -24,7 +20,7 @@ class TestingConfig(Config):
     CACHE_DEFAULT_TIMEOUT = 60
 
 class ProductionConfig(Config):
-    SQLALCHEMY_DATABASE_URI = os.getenv("SQLALCHEMY_DATABASE_URI")
+    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")   # <- Render/GitHub Secrets feed this
     RATELIMIT_STORAGE_URI = "memory://"
     RATELIMIT_DEFAULT = "100 per minute"
     CACHE_TYPE = "SimpleCache"
