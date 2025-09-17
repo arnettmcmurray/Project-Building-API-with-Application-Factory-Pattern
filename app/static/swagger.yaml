@@ -1,6 +1,6 @@
 swagger: "2.0"
 info:
-  version: "1.0.1" # bumped version for redeploy confirmation
+  version: "1.0.0"
   title: "Mechanic Shop API"
   description: "API for managing customers, mechanics, parts, and service tickets."
 
@@ -24,439 +24,186 @@ securityDefinitions:
     in: header
     description: |
       JWT Authorization header using the Bearer scheme.
-      Example: "Bearer {token}"
-
-# ================================
-# TAGS
-# ================================
-tags:
-  - name: Customers
-    description: "Customer management"
-  - name: Mechanics
-    description: "Mechanic registration, login, and management"
-  - name: Inventory
-    description: "Parts/Inventory management"
-  - name: Service Tickets
-    description: "Service ticket creation and tracking"
-  - name: Negative Tests
-    description: "Endpoints for intentional failure scenarios"
 
 # ================================
 # PATHS
 # ================================
 paths:
-  # ---- CUSTOMERS ----
   /customers:
+    get:
+      summary: Get all customers
+      responses:
+        200:
+          description: List of customers
     post:
-      tags: [Customers]
       summary: Create a new customer
       parameters:
         - in: body
-          name: body
+          name: customer
           required: true
           schema:
-            $ref: "#/definitions/Customer"
-          examples:
-            application/json:
-              name: "Alice Johnson"
-              email: "alice@example.com"
+            $ref: "#/definitions/CustomerInput"
       responses:
-        "201": { description: Customer created }
-        "400": { description: Bad Request }
-        "409": { description: Conflict (email exists) }
-
-    get:
-      tags: [Customers]
-      summary: Get all customers
-      security: [{ BearerAuth: [] }]
-      responses:
-        "200": { description: List of customers }
-
-  /customers/search:
-    get:
-      tags: [Customers]
-      summary: Search customer by email
-      parameters:
-        - name: email
-          in: query
-          required: true
-          type: string
-          example: "alice@example.com" # updated for swagger alignment
-      security: [{ BearerAuth: [] }]
-      responses:
-        "200": { description: Customer found }
-        "404": { description: Customer not found }
-
-  /customers/{id}:
-    put:
-      tags: [Customers]
-      summary: Update a customer
-      parameters:
-        - name: id
-          in: path
-          required: true
-          type: integer
-        - in: body
-          name: body
-          schema: { $ref: "#/definitions/Customer" }
-          examples:
-            application/json:
-              name: "Alice Updated"
-              email: "alice.new@example.com"
-      responses:
-        "200": { description: Customer updated }
-        "404": { description: Customer not found }
-
-    delete:
-      tags: [Customers]
-      summary: Delete a customer
-      parameters:
-        - name: id
-          in: path
-          required: true
-          type: integer
-      responses:
-        "200": { description: Customer deleted }
-        "404": { description: Customer not found }
-
-  # ---- MECHANICS ----
-  /mechanics/ping:
-    get:
-      tags: [Mechanics]
-      summary: Health check endpoint
-      responses:
-        "200": { description: Pong }
-
-  /mechanics/login: # updated for swagger alignment
-    post:
-      tags: [Mechanics]
-      summary: Login mechanic
-      parameters:
-        - in: body
-          name: body
-          required: true
-          schema: { $ref: "#/definitions/Login" }
-          examples:
-            application/json:
-              email: "mike@example.com"
-              password: "password1"
-      responses:
-        "200": { description: Successful login (returns JWT token) }
-        "400": { description: Invalid credentials }
+        201:
+          description: Customer created
 
   /mechanics:
     get:
-      tags: [Mechanics]
       summary: Get all mechanics
-      security: [{ BearerAuth: [] }]
       responses:
-        "200": { description: List of mechanics }
-        "401": { description: Unauthorized }
-
+        200:
+          description: List of mechanics
     post:
-      tags: [Mechanics]
-      summary: Create mechanic
+      summary: Create a new mechanic
       parameters:
         - in: body
-          name: body
-          schema: { $ref: "#/definitions/Mechanic" }
-          examples:
-            application/json:
-              name: "New Mechanic"
-              email: "new.mech@example.com"
-              password: "newpass123"
-              specialty: "Diagnostics"
-      responses:
-        "201": { description: Mechanic created }
-        "400": { description: Invalid input }
-        "409": { description: Email exists }
-
-  /mechanics/{id}:
-    put:
-      tags: [Mechanics]
-      summary: Update mechanic
-      parameters:
-        - name: id
-          in: path
+          name: mechanic
           required: true
-          type: integer
-        - in: body
-          name: body
-          schema: { $ref: "#/definitions/Mechanic" }
-          examples:
-            application/json:
-              name: "Mike Updated"
-              specialty: "Engine"
-      responses:
-        "200": { description: Mechanic updated }
-        "404": { description: Mechanic not found }
-
-    delete:
-      tags: [Mechanics]
-      summary: Delete mechanic
-      parameters:
-        - name: id
-          in: path
-          required: true
-          type: integer
-      responses:
-        "200": { description: Mechanic deleted }
-        "404": { description: Mechanic not found }
-
-  /mechanics/my-tickets: # updated for swagger alignment
-    get:
-      tags: [Mechanics]
-      summary: Get tickets assigned to mechanic
-      security: [{ BearerAuth: [] }]
-      responses:
-        "200": { description: Tickets for mechanic }
-
-  /mechanics/top: # updated for swagger alignment
-    get:
-      tags: [Mechanics]
-      summary: Get mechanic with most tickets
-      security: [{ BearerAuth: [] }]
-      responses:
-        "200": { description: Mechanic with most tickets }
-
-  /mechanics/ticket-count: # updated for swagger alignment
-    get:
-      tags: [Mechanics]
-      summary: Get ticket count by mechanic
-      security: [{ BearerAuth: [] }]
-      responses:
-        "200": { description: Ticket count by mechanic }
-
-  # ---- INVENTORY ----
-  /inventory:
-    post:
-      tags: [Inventory]
-      summary: Create part
-      security: [{ BearerAuth: [] }]
-      parameters:
-        - in: body
-          name: body
-          schema: { $ref: "#/definitions/Inventory" }
-          examples:
-            application/json:
-              name: "Brake Pads"
-              price: 50.0
-      responses:
-        "201": { description: Part created }
-        "400": { description: Bad input }
-
-    get:
-      tags: [Inventory]
-      summary: Get all parts
-      security: [{ BearerAuth: [] }]
-      responses:
-        "200": { description: List of parts }
-
-  /inventory/{id}:
-    get:
-      tags: [Inventory]
-      summary: Get part by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          type: integer
-      security: [{ BearerAuth: [] }]
-      responses:
-        "200": { description: Part found }
-        "404": { description: Part not found }
-
-    put:
-      tags: [Inventory]
-      summary: Update part
-      parameters:
-        - name: id
-          in: path
-          required: true
-          type: integer
-        - in: body
-          name: body
-          schema: { $ref: "#/definitions/Inventory" }
-          examples:
-            application/json:
-              name: "Rotor"
-              price: 120.0
-      responses:
-        "200": { description: Part updated }
-        "404": { description: Part not found }
-
-    delete:
-      tags: [Inventory]
-      summary: Delete part
-      parameters:
-        - name: id
-          in: path
-          required: true
-          type: integer
-      responses:
-        "200": { description: Part deleted }
-        "404": { description: Part not found }
-
-  # ---- SERVICE TICKETS ----
-  /service_tickets:
-    post:
-      tags: [Service Tickets]
-      summary: Create service ticket
-      security: [{ BearerAuth: [] }]
-      parameters:
-        - in: body
-          name: body
-          schema: { $ref: "#/definitions/ServiceTicket" }
-          examples:
-            application/json:
-              description: "Brake replacement"
-              customer_id: 1
-      responses:
-        "201": { description: Ticket created }
-        "400": { description: Invalid data }
-        "401": { description: Unauthorized }
-
-    get:
-      tags: [Service Tickets]
-      summary: Get all tickets
-      security: [{ BearerAuth: [] }]
-      responses:
-        "200": { description: List of tickets }
-        "401": { description: Unauthorized }
-
-  /service_tickets/{id}:
-    put:
-      tags: [Service Tickets]
-      summary: Update ticket
-      parameters:
-        - name: id
-          in: path
-          required: true
-          type: integer
-        - in: body
-          name: body
-          schema: { $ref: "#/definitions/ServiceTicket" }
-          examples:
-            application/json:
-              description: "Brake + rotor replacement"
-      responses:
-        "200": { description: Ticket updated }
-        "404": { description: Ticket not found }
-
-    delete:
-      tags: [Service Tickets]
-      summary: Delete ticket
-      parameters:
-        - name: id
-          in: path
-          required: true
-          type: integer
-      responses:
-        "200": { description: Ticket deleted }
-        "404": { description: Ticket not found }
-
-  /service_tickets/{id}/assign/{mechanic_id}: # updated for swagger alignment
-    post:
-      tags: [Service Tickets]
-      summary: Assign mechanic to ticket
-      parameters:
-        - name: id
-          in: path
-          required: true
-          type: integer
-        - name: mechanic_id
-          in: path
-          required: true
-          type: integer
-      responses:
-        "200": { description: Mechanic assigned }
-        "404": { description: Ticket or mechanic not found }
-
-  /service_tickets/{id}/parts: # updated for swagger alignment
-    post:
-      tags: [Service Tickets]
-      summary: Add part to ticket
-      parameters:
-        - name: id
-          in: path
-          required: true
-          type: integer
-        - in: body
-          name: body
           schema:
-            type: object
-            properties:
-              part_id:
-                type: integer
-          examples:
-            application/json:
-              part_id: 1
+            $ref: "#/definitions/MechanicInput"
       responses:
-        "200": { description: Part added to ticket }
-        "404": { description: Ticket or part not found }
+        201:
+          description: Mechanic created
 
-  # ---- NEGATIVE TESTS ----
-  /negative/customers/bad_request: # updated for swagger alignment
+  /inventory:
+    get:
+      summary: Get all parts in inventory
+      responses:
+        200:
+          description: List of parts
     post:
-      tags: [Negative Tests]
-      summary: Create customer missing email (should fail)
+      summary: Add a new part
       parameters:
         - in: body
-          name: body
+          name: part
           required: true
-          schema: { $ref: "#/definitions/Customer" }
-          examples:
-            application/json:
-              name: "Missing Email"
+          schema:
+            $ref: "#/definitions/InventoryInput"
       responses:
-        "400": { description: Intentional bad request }
+        201:
+          description: Part created
 
-  /negative/mechanics/unauthorized: # updated for swagger alignment
+  /service-tickets:
     get:
-      tags: [Negative Tests]
-      summary: Get mechanics without token (should fail)
+      summary: Get all service tickets
       responses:
-        "401": { description: Intentional unauthorized }
+        200:
+          description: List of tickets
+    post:
+      summary: Create a new service ticket
+      parameters:
+        - in: body
+          name: ticket
+          required: true
+          schema:
+            $ref: "#/definitions/ServiceTicketInput"
+      responses:
+        201:
+          description: Ticket created
+
+  /ticket-inventory:
+    post:
+      summary: Link inventory to service ticket
+      parameters:
+        - in: body
+          name: link
+          required: true
+          schema:
+            $ref: "#/definitions/ServiceTicketInventoryInput"
+      responses:
+        201:
+          description: Inventory linked to ticket
 
 # ================================
 # DEFINITIONS
 # ================================
 definitions:
-  Customer:
+  CustomerInput:
     type: object
+    required:
+      - name
+      - email
+      - phone
+      - car
     properties:
-      id: { type: integer, readOnly: true }
-      name: { type: string, example: "John Doe" }
-      email: { type: string, example: "john@example.com" }
-      phone: { type: string, example: "555-1111" }
-      car: { type: string, example: "Honda Civic" }
+      name:
+        type: string
+        example: "John Doe"
+      email:
+        type: string
+        example: "john@example.com"
+      phone:
+        type: string
+        example: "555-1111"
+      car:
+        type: string
+        example: "Honda Civic"
 
-  Mechanic:
+  MechanicInput:
     type: object
+    required:
+      - name
+      - email
+      - specialty
+      - password
     properties:
-      id: { type: integer, readOnly: true }
-      name: { type: string, example: "Mike Wrench" }
-      email: { type: string, example: "mike@example.com" }
-      password: { type: string, example: "password1" }
-      specialty: { type: string, example: "Engine" }
+      name:
+        type: string
+        example: "Mike Wrench"
+      email:
+        type: string
+        example: "mike@example.com"
+      specialty:
+        type: string
+        example: "Engine"
+      password:
+        type: string
+        example: "password1"
 
-  Inventory:
+  InventoryInput:
     type: object
+    required:
+      - name
+      - price
     properties:
-      id: { type: integer, readOnly: true }
-      name: { type: string, example: "Brake Pads" }
-      price: { type: number, format: float, example: 59.99 }
+      name:
+        type: string
+        example: "Brake Pads"
+      price:
+        type: number
+        format: float
+        example: 59.99
 
-  ServiceTicket:
+  ServiceTicketInput:
     type: object
+    required:
+      - customer_id
+      - description
+      - status
     properties:
-      id: { type: integer, readOnly: true }
-      customer_id: { type: integer, example: 1 }
-      description: { type: string, example: "Oil change" }
-      status: { type: string, example: "Open" }
+      customer_id:
+        type: integer
+        example: 1
+      description:
+        type: string
+        example: "Oil change"
+      status:
+        type: string
+        example: "Open"
 
-  Login:
+  ServiceTicketInventoryInput:
     type: object
+    required:
+      - ticket_id
+      - part_id
+      - quantity
     properties:
-      email: { type: string, example: "mike@example.com" }
-      password: { type: string, example: "password1" }
+      ticket_id:
+        type: integer
+        example: 1
+      part_id:
+        type: integer
+        example: 2
+      quantity:
+        type: integer
+        example: 1
