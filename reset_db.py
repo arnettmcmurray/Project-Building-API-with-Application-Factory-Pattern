@@ -1,14 +1,17 @@
-from app import create_app
-from app.extensions import db
-import seed   # just import the file, it runs its own seeding code
-from config import ProductionConfig
+# reset_db.py
+# This resets and seeds the database in the same way Render does at deploy
+# No .env, no local secret lookups. GitHub provides DATABASE_URL to Render.
 
-app = create_app(ProductionConfig)
+from app import create_app, db
+import seed
 
-with app.app_context():
-    db.drop_all()
-    db.create_all()
-    print(" Database reset (Production)")
+def reset_and_seed():
+    # Force ProductionConfig so DATABASE_URL comes from GitHub/Render secrets
+    app = create_app("production")
+    with app.app_context():
+        db.drop_all()
+        db.create_all()
+        seed.run_seed()
 
-    # seed runs automatically on import
-    print("🌱 Database reseeded with sample data (Production)")
+if __name__ == "__main__":
+    reset_and_seed()
