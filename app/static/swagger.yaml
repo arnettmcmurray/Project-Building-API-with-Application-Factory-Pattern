@@ -1,6 +1,6 @@
 swagger: "2.0"
 info:
-  version: "1.0.1" # bumped version for redeploy confirmation
+  version: "1.0.1"
   title: "Mechanic Shop API"
   description: "API for managing customers, mechanics, parts, and service tickets."
 
@@ -14,9 +14,6 @@ consumes:
 produces:
   - "application/json"
 
-# ================================
-# SECURITY
-# ================================
 securityDefinitions:
   BearerAuth:
     type: apiKey
@@ -26,9 +23,6 @@ securityDefinitions:
       JWT Authorization header using the Bearer scheme.
       Example: "Bearer {token}"
 
-# ================================
-# TAGS
-# ================================
 tags:
   - name: Customers
     description: "Customer management"
@@ -41,11 +35,7 @@ tags:
   - name: Negative Tests
     description: "Endpoints for intentional failure scenarios"
 
-# ================================
-# PATHS
-# ================================
 paths:
-  # ---- CUSTOMERS ----
   /customers:
     post:
       tags: [Customers]
@@ -60,6 +50,8 @@ paths:
             application/json:
               name: "Alice Johnson"
               email: "alice@example.com"
+              phone: "555-1234"
+              car: "Ford Focus"
       responses:
         "201": { description: Customer created }
         "400": { description: Bad Request }
@@ -81,7 +73,7 @@ paths:
           in: query
           required: true
           type: string
-          example: "alice@example.com" # updated for swagger alignment
+          example: "alice@example.com"
       security: [{ BearerAuth: [] }]
       responses:
         "200": { description: Customer found }
@@ -98,11 +90,14 @@ paths:
           type: integer
         - in: body
           name: body
-          schema: { $ref: "#/definitions/Customer" }
+          schema:
+            $ref: "#/definitions/Customer"
           examples:
             application/json:
               name: "Alice Updated"
               email: "alice.new@example.com"
+              phone: "555-5678"
+              car: "Nissan Altima"
       responses:
         "200": { description: Customer updated }
         "404": { description: Customer not found }
@@ -119,7 +114,6 @@ paths:
         "200": { description: Customer deleted }
         "404": { description: Customer not found }
 
-  # ---- MECHANICS ----
   /mechanics/ping:
     get:
       tags: [Mechanics]
@@ -127,7 +121,7 @@ paths:
       responses:
         "200": { description: Pong }
 
-  /mechanics/login: # updated for swagger alignment
+  /mechanics/login:
     post:
       tags: [Mechanics]
       summary: Login mechanic
@@ -135,7 +129,8 @@ paths:
         - in: body
           name: body
           required: true
-          schema: { $ref: "#/definitions/login" }
+          schema:
+            $ref: "#/definitions/Login"
           examples:
             application/json:
               email: "mike@example.com"
@@ -159,7 +154,8 @@ paths:
       parameters:
         - in: body
           name: body
-          schema: { $ref: "#/definitions/Mechanic" }
+          schema:
+            $ref: "#/definitions/Mechanic"
           examples:
             application/json:
               name: "New Mechanic"
@@ -182,7 +178,8 @@ paths:
           type: integer
         - in: body
           name: body
-          schema: { $ref: "#/definitions/Mechanic" }
+          schema:
+            $ref: "#/definitions/Mechanic"
           examples:
             application/json:
               name: "Mike Updated"
@@ -203,7 +200,7 @@ paths:
         "200": { description: Mechanic deleted }
         "404": { description: Mechanic not found }
 
-  /mechanics/my-tickets: # updated for swagger alignment
+  /mechanics/my-tickets:
     get:
       tags: [Mechanics]
       summary: Get tickets assigned to mechanic
@@ -211,7 +208,7 @@ paths:
       responses:
         "200": { description: Tickets for mechanic }
 
-  /mechanics/top: # updated for swagger alignment
+  /mechanics/top:
     get:
       tags: [Mechanics]
       summary: Get mechanic with most tickets
@@ -219,7 +216,7 @@ paths:
       responses:
         "200": { description: Mechanic with most tickets }
 
-  /mechanics/ticket-count: # updated for swagger alignment
+  /mechanics/ticket-count:
     get:
       tags: [Mechanics]
       summary: Get ticket count by mechanic
@@ -227,7 +224,6 @@ paths:
       responses:
         "200": { description: Ticket count by mechanic }
 
-  # ---- INVENTORY ----
   /inventory:
     post:
       tags: [Inventory]
@@ -236,7 +232,8 @@ paths:
       parameters:
         - in: body
           name: body
-          schema: { $ref: "#/definitions/Inventory" }
+          schema:
+            $ref: "#/definitions/Inventory"
           examples:
             application/json:
               name: "Brake Pads"
@@ -276,7 +273,8 @@ paths:
           type: integer
         - in: body
           name: body
-          schema: { $ref: "#/definitions/Inventory" }
+          schema:
+            $ref: "#/definitions/Inventory"
           examples:
             application/json:
               name: "Rotor"
@@ -297,7 +295,6 @@ paths:
         "200": { description: Part deleted }
         "404": { description: Part not found }
 
-  # ---- SERVICE TICKETS ----
   /service_tickets:
     post:
       tags: [Service Tickets]
@@ -306,11 +303,13 @@ paths:
       parameters:
         - in: body
           name: body
-          schema: { $ref: "#/definitions/ServiceTicket" }
+          schema:
+            $ref: "#/definitions/ServiceTicket"
           examples:
             application/json:
               description: "Brake replacement"
               customer_id: 1
+              status: "Open"
       responses:
         "201": { description: Ticket created }
         "400": { description: Invalid data }
@@ -335,10 +334,12 @@ paths:
           type: integer
         - in: body
           name: body
-          schema: { $ref: "#/definitions/ServiceTicket" }
+          schema:
+            $ref: "#/definitions/ServiceTicket"
           examples:
             application/json:
               description: "Brake + rotor replacement"
+              status: "In Progress"
       responses:
         "200": { description: Ticket updated }
         "404": { description: Ticket not found }
@@ -355,7 +356,7 @@ paths:
         "200": { description: Ticket deleted }
         "404": { description: Ticket not found }
 
-  /service_tickets/{id}/assign/{mechanic_id}: # updated for swagger alignment
+  /service_tickets/{id}/assign/{mechanic_id}:
     post:
       tags: [Service Tickets]
       summary: Assign mechanic to ticket
@@ -372,7 +373,7 @@ paths:
         "200": { description: Mechanic assigned }
         "404": { description: Ticket or mechanic not found }
 
-  /service_tickets/{id}/parts: # updated for swagger alignment
+  /service_tickets/{id}/parts:
     post:
       tags: [Service Tickets]
       summary: Add part to ticket
@@ -385,6 +386,7 @@ paths:
           name: body
           schema:
             type: object
+            required: [part_id]
             properties:
               part_id:
                 type: integer
@@ -395,8 +397,7 @@ paths:
         "200": { description: Part added to ticket }
         "404": { description: Ticket or part not found }
 
-  # ---- NEGATIVE TESTS ----
-  /negative/customers/bad_request: # updated for swagger alignment
+  /negative/customers/bad_request:
     post:
       tags: [Negative Tests]
       summary: Create customer missing email (should fail)
@@ -404,31 +405,29 @@ paths:
         - in: body
           name: body
           required: true
-          schema: { $ref: "#/definitions/Customer" }
+          schema:
+            $ref: "#/definitions/Customer"
           examples:
             application/json:
               name: "Missing Email"
+              phone: "555-0000"
+              car: "Toyota"
       responses:
         "400": { description: Intentional bad request }
 
-  /negative/mechanics/unauthorized: # updated for swagger alignment
+  /negative/mechanics/unauthorized:
     get:
       tags: [Negative Tests]
       summary: Get mechanics without token (should fail)
       responses:
         "401": { description: Intentional unauthorized }
 
-# ================================
-# DEFINITIONS
-# ================================
 definitions:
   Customer:
     type: object
     required:
       - name
       - email
-      - phone
-      - car
     properties:
       id:
         type: integer
@@ -451,7 +450,6 @@ definitions:
     required:
       - name
       - email
-      - specialty
       - password
     properties:
       id:
