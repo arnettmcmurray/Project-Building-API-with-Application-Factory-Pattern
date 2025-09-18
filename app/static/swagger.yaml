@@ -133,7 +133,7 @@ paths:
             $ref: "#/definitions/Login"
           examples:
             application/json:
-              email: "mike@example.com"
+              email: "mike.wrench@example.com"
               password: "password1"
       responses:
         "200": { description: Successful login (returns JWT token) }
