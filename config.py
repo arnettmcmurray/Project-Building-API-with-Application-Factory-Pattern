@@ -20,8 +20,12 @@ class TestingConfig(Config):
     CACHE_DEFAULT_TIMEOUT = 60
 
 class ProductionConfig(Config):
-    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")  # <- Render/GitHub secret
+    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
+    if SQLALCHEMY_DATABASE_URI and "sslmode" not in SQLALCHEMY_DATABASE_URI:
+        SQLALCHEMY_DATABASE_URI += "?sslmode=require"
+
     RATELIMIT_STORAGE_URI = "memory://"
     RATELIMIT_DEFAULT = "100 per minute"
     CACHE_TYPE = "SimpleCache"
     CACHE_DEFAULT_TIMEOUT = 300
+
