@@ -1,5 +1,5 @@
 from app import db
-from models import Customer, Mechanic, Inventory, ServiceTicket, ServiceTicketInventory
+from app.models import Customer, Mechanic, Inventory, ServiceTicket, ServiceTicketInventory
 from werkzeug.security import generate_password_hash
 
 def run_seed():
