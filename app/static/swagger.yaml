@@ -513,7 +513,7 @@ definitions:
     properties:
       email:
         type: string
-        example: "mike@example.com"
+        example: "mike.wrench@example.com"
       password:
         type: string
         example: "password1"
