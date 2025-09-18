@@ -135,7 +135,7 @@ paths:
         - in: body
           name: body
           required: true
-          schema: { $ref: "#/definitions/Login" }
+          schema: { $ref: "#/definitions/login" }
           examples:
             application/json:
               email: "mike@example.com"
