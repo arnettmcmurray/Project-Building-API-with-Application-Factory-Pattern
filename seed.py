@@ -1,6 +1,5 @@
 from app import db
 from app.models import Customer, Mechanic, Inventory, ServiceTicket, ServiceTicketInventory
-from werkzeug.security import generate_password_hash
 
 def run_seed():
     # Customers
@@ -13,15 +12,17 @@ def run_seed():
     m1 = Mechanic(
         name="Mike Wrench",
         email="mike.wrench@example.com",
-        password=generate_password_hash("password1"),
         specialty="Engine"
     )
+    m1.set_password("password1")
+
     m2 = Mechanic(
         name="Sara Bolt",
         email="sara@example.com",
-        password=generate_password_hash("password2"),
         specialty="Brakes"
     )
+    m2.set_password("password2")
+
     db.session.add_all([m1, m2])
     db.session.commit()
 
@@ -47,4 +48,4 @@ def run_seed():
     db.session.add_all([link1, link2])
     db.session.commit()
 
-    print("✅ Database seeded with Swagger-aligned data")
+    print("Database seeded with Swagger-aligned data")
