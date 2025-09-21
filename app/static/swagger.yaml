@@ -22,6 +22,8 @@ securityDefinitions:
     description: |
       JWT Authorization header using the Bearer scheme.
       Example: "Bearer {token}"
+security:
+  - BearerAuth: [] # <--- global
 
 tags:
   - name: Customers
