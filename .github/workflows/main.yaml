@@ -48,3 +48,14 @@ jobs:
 
       - name: Run tests
         run: python -m unittest discover -s tests -p "test_*.py"
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Render
+        uses: render-examples/deploy-action@v1
+        with:
+          serviceId: ${{ secrets.RENDER_SERVICE_ID }}
+          apiKey: ${{ secrets.RENDER_API_KEY }}
+
