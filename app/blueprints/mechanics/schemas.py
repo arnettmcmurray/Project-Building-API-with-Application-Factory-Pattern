@@ -1,33 +1,30 @@
-from app.extensions import ma
-from marshmallow import fields
+from marshmallow import Schema, fields, post_load
 from app.models import Mechanic
-from app.blueprints.service_tickets.schemas import ServiceTicketSchema
 
-class MechanicSchema(ma.SQLAlchemyAutoSchema):
-    class Meta:
-        model = Mechanic
-        load_instance = True
-        include_fk = True
-
+# === Mechanic Schema ===
+class MechanicSchema(Schema):
     id = fields.Int(dump_only=True)
+    name = fields.Str(required=True)
     email = fields.Email(required=True)
+    specialty = fields.Str()
+    password = fields.Str(load_only=True, required=True)  # only accepted on input
 
-    # accept plain password, hide password_hash
-    password = fields.String(load_only=True, required=True)
-    password_hash = fields.String(dump_only=True)   # exclude input
+    @post_load
+    def make_mechanic(self, data, **kwargs):
+        password = data.pop("password", None)
+        mech = Mechanic(**data)
+        if password:
+            mech.set_password(password)
+        return mech
 
-    name = fields.String(required=True)
-    specialty = fields.String(required=False)
 
-    # Nested: show tickets mechanic works on
-    tickets = fields.List(fields.Nested(lambda: ServiceTicketSchema(exclude=("mechanics",))))
+# === Login Schema ===
+class LoginSchema(Schema):
+    email = fields.Email(required=True)
+    password = fields.Str(required=True)
+
+
+# === Schema Instances for routes ===
 mechanic_schema = MechanicSchema()
 mechanics_schema = MechanicSchema(many=True)
-
-
-# === Login Schema (for login route) ===
-class LoginSchema(ma.Schema):
-    email = fields.Email(required=True)
-    password = fields.String(required=True, load_only=True)
-
 login_schema = LoginSchema()

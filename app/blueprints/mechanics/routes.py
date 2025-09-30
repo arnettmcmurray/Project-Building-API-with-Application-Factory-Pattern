@@ -25,9 +25,6 @@ def create_mechanic():
     except ValidationError as err:
         return jsonify({"errors": err.messages}), 400
 
-    if "password" in request.json:
-        mech.set_password(request.json["password"])
-
     try:
         db.session.add(mech)
         db.session.commit()
@@ -114,6 +111,7 @@ def my_tickets():
         {
             "id": t.id,
             "description": t.description,
+            "status": t.status,
             "date": t.date.isoformat(),
             "customer_id": t.customer_id
         }
@@ -141,37 +139,4 @@ def mechanic_with_most_tickets():
     if not result:
         return jsonify({"message": "No mechanics found"}), 404
 
-    return jsonify({
-        "id": result.id,
-        "name": result.name,
-        "email": result.email,
-        "ticket_count": int(result.ticket_count)
-    }), 200
-
-
-# ---------------- Mechanics ranked by ticket count (protected) ----------------
-@mechanics_bp.route("/ticket-count", methods=["GET"])
-@token_required
-def mechanics_by_ticket_count():
-    rows = (
-        db.session.query(
-            Mechanic.id,
-            Mechanic.name,
-            Mechanic.email,
-            func.count(ticket_mechanics.c.service_ticket_id).label("ticket_count")   # fixed column
-        )
-        .join(ticket_mechanics, Mechanic.id == ticket_mechanics.c.mechanic_id)
-        .group_by(Mechanic.id)
-        .order_by(desc("ticket_count"))
-        .all()
-    )
-
-    return jsonify([
-        {
-            "id": r.id,
-            "name": r.name,
-            "email": r.email,
-            "ticket_count": int(r.ticket_count)
-        }
-        for r in rows
-    ]), 200
+    retur

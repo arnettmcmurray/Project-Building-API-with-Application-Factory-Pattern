@@ -150,7 +150,7 @@ paths:
           name: body
           required: true
           schema:
-            $ref: "#/definitions/Login"
+            $ref: "#/definitions/MechanicLogin"
           examples:
             application/json:
               email: "mike@example.com"
@@ -158,6 +158,33 @@ paths:
       responses:
         "200": { description: Successful login (returns JWT token) }
         "400": { description: Invalid credentials }
+
+  /mechanics/my-tickets:
+    get:
+      tags: [Mechanics]
+      summary: Get tickets for the current mechanic
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: List of tickets assigned to the mechanic
+
+  /mechanics/top:
+    get:
+      tags: [Mechanics]
+      summary: Get mechanic with the most tickets
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Mechanic with highest ticket count
+
+  /mechanics/ticket-count:
+    get:
+      tags: [Mechanics]
+      summary: Get mechanics ranked by ticket count
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: List of mechanics with their ticket counts
 
   /inventory:
     post:
@@ -197,7 +224,7 @@ paths:
         "200": { description: Part found }
         "404": { description: Part not found }
 
-  /service_tickets:
+  /tickets:
     post:
       tags: [Service Tickets]
       summary: Create service ticket
@@ -224,7 +251,7 @@ paths:
         "200": { description: List of tickets }
         "401": { description: Unauthorized }
 
-  /service_tickets/{id}/assign/{mechanic_id}:
+  /tickets/{id}/assign/{mechanic_id}:
     post:
       tags: [Service Tickets]
       summary: Assign mechanic to ticket
@@ -241,7 +268,7 @@ paths:
         "200": { description: Mechanic assigned }
         "404": { description: Ticket or mechanic not found }
 
-  /service_tickets/{id}/parts:
+  /tickets/{id}/parts:
     post:
       tags: [Service Tickets]
       summary: Add part to ticket
@@ -308,12 +335,42 @@ definitions:
       email:
         type: string
         example: "mike.wrench@example.com"
-      password:   # request-only; stored as password_hash server-side
-        type: string
-        example: "password1"
       specialty:
         type: string
         example: "Diagnostics"
+
+  MechanicCreate:
+    type: object
+    required:
+      - name
+      - email
+      - password
+    properties:
+      name:
+        type: string
+        example: "Sara Bolt"
+      email:
+        type: string
+        example: "sara@example.com"
+      specialty:
+        type: string
+        example: "Brakes"
+      password:
+        type: string
+        example: "password2"
+
+  MechanicLogin:
+    type: object
+    required:
+      - email
+      - password
+    properties:
+      email:
+        type: string
+        example: "sara@example.com"
+      password:
+        type: string
+        example: "password2"
 
   Inventory:
     type: object
