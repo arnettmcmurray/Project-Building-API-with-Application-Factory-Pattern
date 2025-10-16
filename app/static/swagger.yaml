@@ -2,18 +2,20 @@ openapi: 3.0.1
 info:
   title: Mechanic Workshop API
   version: 1.0.0
-  description: Flask backend for managing mechanics, customers, inventory, and service tickets.
+  description: >
+    Flask backend for managing mechanics, customers, inventory, and service tickets.
+    Includes authentication for mechanics with JWT tokens.
 servers:
-  - url: https://mechanics-api.onrender.com/api
+  - url: https://mechanics-api.onrender.com
     description: Production server
   - url: http://127.0.0.1:5000
     description: Local development server
 
 tags:
-  - name: Customers
-    description: Endpoints for customer management
   - name: Mechanics
     description: Endpoints for mechanic management
+  - name: Customers
+    description: Endpoints for customer management
   - name: Inventory
     description: Endpoints for inventory management
   - name: ServiceTickets
@@ -22,132 +24,340 @@ tags:
     description: Endpoints for intentional failure scenarios
 
 paths:
-  /customers:
-    post:
-      tags: [Customers]
-      summary: Create Customer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CustomerCreate"
-      responses:
-        "201":
-          description: Customer created
+  # ---------------- Mechanics ----------------
+  /mechanics/ping:
     get:
-      tags: [Customers]
-      summary: Get All Customers
+      tags: [Mechanics]
+      summary: Check if the server is running
       responses:
         "200":
-          description: List of customers
+          description: Server is running
+
+  /mechanics/login:
+    post:
+      tags: [Mechanics]
+      summary: Login Mechanic
+      description: Authenticate and retrieve JWT token
+      parameters:
+        - name: body
+          in: body
+          example:
+            {
+              "email": "alex.johnson@autoshop.com",
+              "password": "MySecurePass123!"
+            }
+      responses:
+        "200":
+          description: JWT token returned
 
   /mechanics:
     post:
       tags: [Mechanics]
-      summary: Register Mechanic
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/MechanicCreate"
+      summary: Register new mechanic
+      parameters:
+        - name: body
+          in: body
+          example:
+            {
+              "name": "Alex Johnson",
+              "email": "alex.johnson@autoshop.com",
+              "password": "MySecurePass123!",
+              "specialty": "Transmission Repair"
+            }
       responses:
         "201":
-          description: Mechanic registered
+          description: Mechanic created
+
     get:
       tags: [Mechanics]
-      summary: Get All Mechanics
+      summary: Get all mechanics
       responses:
         "200":
-          description: List of mechanics
+          description: List of all mechanics
 
+  /mechanics/{id}:
+    put:
+      tags: [Mechanics]
+      summary: Update mechanic profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+        - name: body
+          in: body
+          example:
+            {
+              "name": "Alex J.",
+              "specialty": "Brakes"
+            }
+      responses:
+        "200":
+          description: Mechanic updated
+    delete:
+      tags: [Mechanics]
+      summary: Delete mechanic
+      parameters:
+        - name: id
+          in: path
+          required: true
+      responses:
+        "200":
+          description: Mechanic deleted
+
+  /mechanics/my-tickets:
+    get:
+      tags: [Mechanics]
+      summary: Get tickets assigned to logged-in mechanic
+      responses:
+        "200":
+          description: List of tickets for mechanic
+
+  /mechanics/top:
+    get:
+      tags: [Mechanics]
+      summary: Mechanic with most tickets
+      responses:
+        "200":
+          description: Top mechanic by ticket count
+
+  # ---------------- Customers ----------------
+  /customers:
+    get:
+      tags: [Customers]
+      summary: Get all customers
+      responses:
+        "200":
+          description: List of customers
+    post:
+      tags: [Customers]
+      summary: Create new customer
+      parameters:
+        - name: body
+          in: body
+          example:
+            {
+              "name": "Jane Doe",
+              "email": "jane.doe@email.com",
+              "phone": "312-555-9020",
+              "car": "2018 Honda Accord LX"
+            }
+      responses:
+        "201":
+          description: Customer created
+
+  /customers/search:
+    get:
+      tags: [Customers]
+      summary: Search customer by email
+      parameters:
+        - name: email
+          in: query
+          required: true
+          example: jane.doe@email.com
+      responses:
+        "200":
+          description: Matching customer found
+
+  /customers/{id}:
+    put:
+      tags: [Customers]
+      summary: Update existing customer
+      parameters:
+        - name: id
+          in: path
+          required: true
+        - name: body
+          in: body
+          example:
+            {
+              "phone": "312-555-8888",
+              "car": "2021 Toyota Camry"
+            }
+      responses:
+        "200":
+          description: Customer updated
+    delete:
+      tags: [Customers]
+      summary: Delete a customer
+      parameters:
+        - name: id
+          in: path
+          required: true
+      responses:
+        "200":
+          description: Customer deleted
+
+  # ---------------- Inventory ----------------
   /inventory:
     get:
       tags: [Inventory]
-      summary: Get All Inventory
+      summary: Get all inventory parts
       responses:
         "200":
-          description: List of inventory items
+          description: List of parts
     post:
       tags: [Inventory]
-      summary: Add Inventory Item
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/InventoryCreate"
+      summary: Add a new part to inventory
+      parameters:
+        - name: body
+          in: body
+          example:
+            {
+              "name": "Brake Pads - Front Set",
+              "price": 89.99,
+              "quantity": 40
+            }
       responses:
         "201":
-          description: Inventory item created
+          description: Part added to inventory
 
+  /inventory/{id}:
+    get:
+      tags: [Inventory]
+      summary: Get part by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+      responses:
+        "200":
+          description: Part details
+    put:
+      tags: [Inventory]
+      summary: Update inventory part
+      parameters:
+        - name: id
+          in: path
+          required: true
+        - name: body
+          in: body
+          example:
+            {
+              "name": "Brake Pads - Rear Set",
+              "price": 92.50,
+              "quantity": 55
+            }
+      responses:
+        "200":
+          description: Part updated
+    delete:
+      tags: [Inventory]
+      summary: Delete inventory part
+      parameters:
+        - name: id
+          in: path
+          required: true
+      responses:
+        "200":
+          description: Part deleted
+
+  # ---------------- Service Tickets ----------------
   /service_tickets:
     get:
       tags: [ServiceTickets]
-      summary: Get All Service Tickets
+      summary: Get all service tickets
       responses:
         "200":
           description: List of service tickets
     post:
       tags: [ServiceTickets]
-      summary: Create Service Ticket
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ServiceTicketCreate"
+      summary: Create new service ticket
+      parameters:
+        - name: body
+          in: body
+          example:
+            {
+              "description": "Oil change and tire rotation",
+              "status": "Open",
+              "customer_id": 1
+            }
       responses:
         "201":
           description: Service ticket created
 
-components:
-  schemas:
-    CustomerCreate:
-      type: object
-      properties:
-        name:
-          type: string
-        email:
-          type: string
-        phone:
-          type: string
-        car:
-          type: string
-      required: [name, email, phone, car]
+  /service_tickets/{ticket_id}:
+    put:
+      tags: [ServiceTickets]
+      summary: Update a service ticket
+      parameters:
+        - name: ticket_id
+          in: path
+          required: true
+        - name: body
+          in: body
+          example:
+            {
+              "description": "Replace spark plugs",
+              "status": "Completed"
+            }
+      responses:
+        "200":
+          description: Ticket updated
+    delete:
+      tags: [ServiceTickets]
+      summary: Delete a service ticket
+      parameters:
+        - name: ticket_id
+          in: path
+          required: true
+      responses:
+        "200":
+          description: Ticket deleted
 
-    MechanicCreate:
-      type: object
-      properties:
-        name:
-          type: string
-        email:
-          type: string
-        specialty:
-          type: string
-        password:
-          type: string
-      required: [name, email, specialty, password]
+  /service_tickets/{ticket_id}/assign/{mech_id}:
+    post:
+      tags: [ServiceTickets]
+      summary: Assign mechanic to a ticket
+      parameters:
+        - name: ticket_id
+          in: path
+          required: true
+        - name: mech_id
+          in: path
+          required: true
+      responses:
+        "200":
+          description: Mechanic assigned to ticket
 
-    InventoryCreate:
-      type: object
-      properties:
-        name:
-          type: string
-        price:
-          type: number
-        quantity:
-          type: integer
-      required: [name, price, quantity]
+  /service_tickets/{ticket_id}/parts:
+    post:
+      tags: [ServiceTickets]
+      summary: Add parts to service ticket
+      parameters:
+        - name: ticket_id
+          in: path
+          required: true
+        - name: body
+          in: body
+          example:
+            {
+              "part_id": 3,
+              "quantity": 2
+            }
+      responses:
+        "201":
+          description: Parts added to ticket
 
-    ServiceTicketCreate:
-      type: object
-      properties:
-        description:
-          type: string
-        status:
-          type: string
-        customer_id:
-          type: integer
-      required: [description, status, customer_id]
+  # ---------------- Negative Tests ----------------
+  /negative/mechanics-no-token:
+    get:
+      tags: [NegativeTests]
+      summary: Get mechanics without token
+      responses:
+        "401":
+          description: Unauthorized
+
+  /negative/customer-missing-email:
+    post:
+      tags: [NegativeTests]
+      summary: Attempt to create customer with missing email
+      parameters:
+        - name: body
+          in: body
+          example:
+            {
+              "name": "Missing Email Test"
+            }
+      responses:
+        "400":
+          description: Invalid input
