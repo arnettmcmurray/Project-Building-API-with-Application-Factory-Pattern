@@ -7,10 +7,10 @@ info:
     Includes authentication for mechanics with JWT tokens.
 
 servers:
-  - url: https://mechanics-api.onrender.com
-    description: Production server
   - url: http://127.0.0.1:5000
     description: Local development server
+  - url: https://mechanics-api.onrender.com
+    description: Production server
 
 tags:
   - name: Mechanics

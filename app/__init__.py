@@ -6,18 +6,23 @@ from app.blueprints.service_tickets import service_tickets_bp
 from app.blueprints.customers import customers_bp
 from app.blueprints.inventory import inventory_bp
 from flask_swagger_ui import get_swaggerui_blueprint
+import os
 
-# === Swagger ===
 SWAGGER_URL = "/api/docs"
-API_URL = "/static/swagger.yaml"
 
-swagger_blueprint = get_swaggerui_blueprint(
-    SWAGGER_URL,
-    API_URL,
-    config={"app_name": "Mechanic Shop API"}
-)
+def create_app(config_class=None):
+    if config_class is None:
+        config_class = os.getenv("FLASK_CONFIG", "config.ProductionConfig")
+    is_render = os.getenv("RENDER", False)
+    base_url = "https://mechanics-api.onrender.com" if is_render else "http://127.0.0.1:5000"
+    API_URL = f"{base_url}/static/swagger.yaml"
 
-def create_app(config_class="config.ProductionConfig"):
+    swagger_blueprint = get_swaggerui_blueprint(
+        SWAGGER_URL,
+        API_URL,
+        config={"app_name": "Mechanic Workshop API"}
+    )
+
     app = Flask(__name__, static_folder="static")
 
     # === Config ===
@@ -34,6 +39,8 @@ def create_app(config_class="config.ProductionConfig"):
         resources={r"/*": {"origins": [
             "https://mechanics-api.onrender.com",
             "https://react-mechanic-api.onrender.com",
+            "http://127.0.0.1:5000",
+            "http://localhost:5000"
             "http://127.0.0.1:5173",
             "http://localhost:5173"
         ]}},
@@ -57,5 +64,7 @@ def create_app(config_class="config.ProductionConfig"):
     @app.route("/")
     def home():
         return {"message": "Mechanics API is live 🚀"}, 200
+
+    print(f"[create_app] Running on Render={is_render}, Base URL={base_url}")
 
     return app
