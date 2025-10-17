@@ -24,22 +24,13 @@ class TestingConfig(Config):
 
 
 class ProductionConfig(Config):
-    # --- Ensure Render/GitHub DATABASE_URL is valid ---
     uri = os.getenv("DATABASE_URL")
-
-    # Fix old postgres:// prefix if GitHub or Render still uses it
     if uri and uri.startswith("postgres://"):
         uri = uri.replace("postgres://", "postgresql://", 1)
-
-    # Require SSL unless using SQLite (local dev only)
     if uri and "sslmode" not in uri and "sqlite" not in uri:
         uri += "?sslmode=require"
 
-    # Hard fail if no DB detected
-    if not uri:
-        raise RuntimeError("DATABASE_URL not found. Check GitHub and Render secrets.")
-
-    SQLALCHEMY_DATABASE_URI = uri
+    SQLALCHEMY_DATABASE_URI = uri or "sqlite:///mechanic_shop.db"
     RATELIMIT_STORAGE_URI = "memory://"
     RATELIMIT_DEFAULT = "100 per minute"
     CACHE_TYPE = "SimpleCache"

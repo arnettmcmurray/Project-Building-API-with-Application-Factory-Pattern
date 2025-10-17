@@ -34,6 +34,7 @@ pycparser==2.22
 pydot==4.0.1
 Pygments==2.19.2
 pyparsing==3.2.3
+python-dotenv==1.1.1
 python-jose==3.5.0
 PyYAML==6.0.2
 rich==13.9.4

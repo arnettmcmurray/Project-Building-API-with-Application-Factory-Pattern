@@ -1,23 +1,21 @@
 from flask import request, jsonify, current_app
-
 from . import mechanics_bp
 from app.extensions import db, limiter
 from app.models import Mechanic, ServiceTicket, ticket_mechanics
 from app.blueprints.mechanics.schemas import mechanic_schema, mechanics_schema, login_schema
 from app.utils.auth import encode_token, token_required
-
 from marshmallow import ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func, desc
 
-# ---------------- Ping route (rate-limited) ----------------
+# ---------------- Ping route ----------------
 @mechanics_bp.route("/ping", methods=["GET"])
-@limiter.limit("5 per minute")   # limit route
+@limiter.limit("5 per minute")
 def ping():
     return jsonify({"ok": True}), 200
 
 
-# ---------------- Create mechanic (signup - open) ----------------
+# ---------------- Create mechanic ----------------
 @mechanics_bp.route("", methods=["POST"])
 def create_mechanic():
     try:
@@ -35,7 +33,7 @@ def create_mechanic():
     return mechanic_schema.jsonify(mech), 201
 
 
-# ---------------- List mechanics (now protected) ----------------
+# ---------------- Get all mechanics ----------------
 @mechanics_bp.route("", methods=["GET"])
 @token_required
 def get_mechanics():
@@ -43,7 +41,7 @@ def get_mechanics():
     return mechanics_schema.jsonify(mechs), 200
 
 
-# ---------------- Login mechanic (open, rate-limited) ----------------
+# ---------------- Login mechanic (full token display) ----------------
 @mechanics_bp.route("/login", methods=["POST"])
 @limiter.limit("5 per minute")
 def login():
@@ -52,16 +50,24 @@ def login():
     except ValidationError as err:
         return jsonify({"errors": err.messages}), 400
 
-    mech = Mechanic.query.filter_by(email=creds["email"]).first()   # fixed lookup
+    mech = Mechanic.query.filter_by(email=creds["email"]).first()
 
     if mech and mech.check_password(creds["password"]):
-        token = encode_token(mech.id, "mechanic")   # pass id + role
-        return jsonify({"token": token}), 200
+        token = encode_token(mech.id, "mechanic")
+
+        # force string output, not hidden by Swagger shorted response
+        response = jsonify({
+            "message": "Login successful",
+            "token": str(token)
+        })
+        response.headers["Content-Type"] = "application/json; charset=utf-8"
+        return response, 200
 
     return jsonify({"error": "Invalid email or password"}), 401
 
 
-# ---------------- Update mechanic (self-only, protected) ----------------
+
+# ---------------- Update mechanic ----------------
 @mechanics_bp.route("/<int:id>", methods=["PUT"])
 @token_required
 def update_mechanic(id):
@@ -76,11 +82,12 @@ def update_mechanic(id):
         mech.specialty = data["specialty"]
     if "password" in data and data["password"]:
         mech.set_password(data["password"])
+
     db.session.commit()
     return mechanic_schema.jsonify(mech), 200
 
 
-# ---------------- Delete mechanic (self-only, protected) ----------------
+# ---------------- Delete mechanic ----------------
 @mechanics_bp.route("/<int:id>", methods=["DELETE"])
 @token_required
 def delete_mechanic(id):
@@ -93,20 +100,20 @@ def delete_mechanic(id):
     return jsonify({"message": f"Mechanic {id} deleted"}), 200
 
 
-# ---------------- Mechanic tickets (protected) ----------------
+# ---------------- My tickets ----------------
 @mechanics_bp.route("/my-tickets", methods=["GET"])
 @token_required
 def my_tickets():
-    # if mechanic_id not sent in body/params, fall back to token
     mech_id = request.args.get("mechanic_id") or (request.json.get("mechanic_id") if request.is_json else None)
     if not mech_id:
-        mech_id = request.mechanic_id  
+        mech_id = request.mechanic_id
 
     tickets = (
         ServiceTicket.query.join(ticket_mechanics)
         .filter(ticket_mechanics.c.mechanic_id == mech_id)
         .all()
     )
+
     return jsonify([
         {
             "id": t.id,
@@ -119,7 +126,7 @@ def my_tickets():
     ]), 200
 
 
-# ---------------- Mechanic with most tickets (protected) ----------------
+# ---------------- Mechanic with most tickets ----------------
 @mechanics_bp.route("/top", methods=["GET"])
 @token_required
 def mechanic_with_most_tickets():
@@ -128,7 +135,7 @@ def mechanic_with_most_tickets():
             Mechanic.id,
             Mechanic.name,
             Mechanic.email,
-            func.count(ticket_mechanics.c.service_ticket_id).label("ticket_count")   # fixed column
+            func.count(ticket_mechanics.c.service_ticket_id).label("ticket_count")
         )
         .join(ticket_mechanics, Mechanic.id == ticket_mechanics.c.mechanic_id)
         .group_by(Mechanic.id)
@@ -139,4 +146,9 @@ def mechanic_with_most_tickets():
     if not result:
         return jsonify({"message": "No mechanics found"}), 404
 
-    retur
+    return jsonify({
+        "id": result.id,
+        "name": result.name,
+        "email": result.email,
+        "ticket_count": result.ticket_count
+    }), 200
