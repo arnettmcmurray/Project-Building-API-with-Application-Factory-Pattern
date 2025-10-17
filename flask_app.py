@@ -1,6 +1,8 @@
 from app import create_app
 
-app = create_app("config.DevelopmentConfig")
+# Use ProductionConfig for Render deployment
+app = create_app("config.ProductionConfig")
+
 
 
 
