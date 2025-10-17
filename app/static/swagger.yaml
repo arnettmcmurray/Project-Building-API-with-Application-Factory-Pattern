@@ -5,6 +5,7 @@ info:
   description: >
     Flask backend for managing mechanics, customers, inventory, and service tickets.
     Includes authentication for mechanics with JWT tokens.
+
 servers:
   - url: https://mechanics-api.onrender.com
     description: Production server
@@ -13,15 +14,10 @@ servers:
 
 tags:
   - name: Mechanics
-    description: Endpoints for mechanic management
   - name: Customers
-    description: Endpoints for customer management
   - name: Inventory
-    description: Endpoints for inventory management
   - name: ServiceTickets
-    description: Endpoints for service ticket creation and tracking
   - name: NegativeTests
-    description: Endpoints for intentional failure scenarios
 
 paths:
   # ---------------- Mechanics ----------------
@@ -37,37 +33,52 @@ paths:
     post:
       tags: [Mechanics]
       summary: Login Mechanic
-      description: Authenticate and retrieve JWT token
-      parameters:
-        - name: body
-          in: body
-          example:
-            {
-              "email": "alex.johnson@autoshop.com",
-              "password": "MySecurePass123!"
-            }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: alex@shop.com
+                password:
+                  type: string
+                  example: password123
       responses:
         "200":
           description: JWT token returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Login successful
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
   /mechanics:
     post:
       tags: [Mechanics]
       summary: Register new mechanic
-      parameters:
-        - name: body
-          in: body
-          example:
-            {
-              "name": "Alex Johnson",
-              "email": "alex.johnson@autoshop.com",
-              "password": "MySecurePass123!",
-              "specialty": "Transmission Repair"
-            }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                name: Alex Rivera
+                email: alex@shop.com
+                password: password123
+                specialty: Brakes
       responses:
         "201":
           description: Mechanic created
-
     get:
       tags: [Mechanics]
       summary: Get all mechanics
@@ -83,13 +94,16 @@ paths:
         - name: id
           in: path
           required: true
-        - name: body
-          in: body
-          example:
-            {
-              "name": "Alex J.",
-              "specialty": "Brakes"
-            }
+          schema: { type: integer, example: 1 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                name: Alex Rivera
+                specialty: Suspension
       responses:
         "200":
           description: Mechanic updated
@@ -100,6 +114,7 @@ paths:
         - name: id
           in: path
           required: true
+          schema: { type: integer, example: 2 }
       responses:
         "200":
           description: Mechanic deleted
@@ -131,16 +146,17 @@ paths:
     post:
       tags: [Customers]
       summary: Create new customer
-      parameters:
-        - name: body
-          in: body
-          example:
-            {
-              "name": "Jane Doe",
-              "email": "jane.doe@email.com",
-              "phone": "312-555-9020",
-              "car": "2018 Honda Accord LX"
-            }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                name: John Doe
+                email: john@example.com
+                phone: 312-555-1111
+                car: Honda Civic
       responses:
         "201":
           description: Customer created
@@ -153,7 +169,7 @@ paths:
         - name: email
           in: query
           required: true
-          example: jane.doe@email.com
+          schema: { type: string, example: john@example.com }
       responses:
         "200":
           description: Matching customer found
@@ -166,13 +182,16 @@ paths:
         - name: id
           in: path
           required: true
-        - name: body
-          in: body
-          example:
-            {
-              "phone": "312-555-8888",
-              "car": "2021 Toyota Camry"
-            }
+          schema: { type: integer, example: 1 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                phone: 312-555-2222
+                car: Honda Accord
       responses:
         "200":
           description: Customer updated
@@ -183,6 +202,7 @@ paths:
         - name: id
           in: path
           required: true
+          schema: { type: integer, example: 2 }
       responses:
         "200":
           description: Customer deleted
@@ -198,15 +218,16 @@ paths:
     post:
       tags: [Inventory]
       summary: Add a new part to inventory
-      parameters:
-        - name: body
-          in: body
-          example:
-            {
-              "name": "Brake Pads - Front Set",
-              "price": 89.99,
-              "quantity": 40
-            }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                name: Brake Pads
+                price: 49.99
+                quantity: 20
       responses:
         "201":
           description: Part added to inventory
@@ -219,6 +240,7 @@ paths:
         - name: id
           in: path
           required: true
+          schema: { type: integer, example: 1 }
       responses:
         "200":
           description: Part details
@@ -229,14 +251,17 @@ paths:
         - name: id
           in: path
           required: true
-        - name: body
-          in: body
-          example:
-            {
-              "name": "Brake Pads - Rear Set",
-              "price": 92.50,
-              "quantity": 55
-            }
+          schema: { type: integer, example: 1 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                name: Oil Filter
+                price: 10.99
+                quantity: 60
       responses:
         "200":
           description: Part updated
@@ -247,6 +272,7 @@ paths:
         - name: id
           in: path
           required: true
+          schema: { type: integer, example: 2 }
       responses:
         "200":
           description: Part deleted
@@ -262,15 +288,15 @@ paths:
     post:
       tags: [ServiceTickets]
       summary: Create new service ticket
-      parameters:
-        - name: body
-          in: body
-          example:
-            {
-              "description": "Oil change and tire rotation",
-              "status": "Open",
-              "customer_id": 1
-            }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                description: Brake pad replacement
+                customer_id: 1
       responses:
         "201":
           description: Service ticket created
@@ -283,13 +309,15 @@ paths:
         - name: ticket_id
           in: path
           required: true
-        - name: body
-          in: body
-          example:
-            {
-              "description": "Replace spark plugs",
-              "status": "Completed"
-            }
+          schema: { type: integer, example: 1 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                description: Replace brake pads and rotors
       responses:
         "200":
           description: Ticket updated
@@ -300,6 +328,7 @@ paths:
         - name: ticket_id
           in: path
           required: true
+          schema: { type: integer, example: 2 }
       responses:
         "200":
           description: Ticket deleted
@@ -312,9 +341,11 @@ paths:
         - name: ticket_id
           in: path
           required: true
+          schema: { type: integer, example: 1 }
         - name: mech_id
           in: path
           required: true
+          schema: { type: integer, example: 1 }
       responses:
         "200":
           description: Mechanic assigned to ticket
@@ -327,13 +358,17 @@ paths:
         - name: ticket_id
           in: path
           required: true
-        - name: body
-          in: body
-          example:
-            {
-              "part_id": 3,
-              "quantity": 2
-            }
+          schema: { type: integer, example: 1 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                parts:
+                  - part_id: 1
+                    quantity: 2
       responses:
         "201":
           description: Parts added to ticket
@@ -351,13 +386,14 @@ paths:
     post:
       tags: [NegativeTests]
       summary: Attempt to create customer with missing email
-      parameters:
-        - name: body
-          in: body
-          example:
-            {
-              "name": "Missing Email Test"
-            }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                name: Missing Email Test
       responses:
         "400":
           description: Invalid input
