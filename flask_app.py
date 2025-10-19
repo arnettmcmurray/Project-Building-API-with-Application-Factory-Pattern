@@ -2,15 +2,15 @@ from app import create_app
 import os
 from dotenv import load_dotenv
 
-# === Load .env if present ===
+# === Load environment variables ===
 load_dotenv()
 
-# === Config switch ===
+# Pick config dynamically based on FLASK_ENV
 env = os.getenv("FLASK_ENV", "production").lower()
+config_name = f"config.{env.capitalize()}Config"
 
-if env == "development":
-    print("[flask_app] Using DevelopmentConfig")
-    app = create_app("config.DevelopmentConfig")
-else:
-    print("[flask_app] Using ProductionConfig")
-    app = create_app("config.ProductionConfig")
+print(f"[flask_app] Environment: {env}")
+app = create_app(config_name)
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))

@@ -1,14 +1,13 @@
 from flask import request, jsonify
 from app.extensions import db, limiter
-from app.models import ServiceTicket, Mechanic, ticket_mechanics, Inventory, ServiceTicketInventory
+from app.models import ServiceTicket, Mechanic, ticket_mechanics, Inventory
 from .schemas import service_ticket_schema, service_tickets_schema
 from . import service_tickets_bp
 from marshmallow import ValidationError
-
 from app.utils.auth import token_required
 
 
-# Create a ticket
+# === Create a ticket ===
 @service_tickets_bp.route("", methods=["POST"])
 @token_required
 def create_ticket():
@@ -22,7 +21,7 @@ def create_ticket():
     return service_ticket_schema.jsonify(ticket), 201
 
 
-# Paginated tickets
+# === Paginated tickets ===
 @service_tickets_bp.route("/paginated", methods=["GET"])
 def get_paginated_tickets():
     try:
@@ -32,7 +31,6 @@ def get_paginated_tickets():
         return jsonify({"error": "Invalid pagination parameters"}), 400
 
     tickets_query = ServiceTicket.query.paginate(page=page, per_page=per_page, error_out=False)
-
     return jsonify({
         "tickets": service_tickets_schema.dump(tickets_query.items),
         "total": tickets_query.total,
@@ -41,21 +39,21 @@ def get_paginated_tickets():
     }), 200
 
 
-# Get single ticket
+# === Get single ticket ===
 @service_tickets_bp.route("/<int:ticket_id>", methods=["GET"])
 def get_ticket(ticket_id):
     ticket = ServiceTicket.query.get_or_404(ticket_id)
     return service_ticket_schema.jsonify(ticket), 200
 
 
-# Get all tickets
+# === Get all tickets ===
 @service_tickets_bp.route("", methods=["GET"])
 def get_all_tickets():
     tickets = ServiceTicket.query.all()
     return service_tickets_schema.jsonify(tickets), 200
 
 
-# Update ticket
+# === Update ticket ===
 @service_tickets_bp.route("/<int:ticket_id>", methods=["PUT"])
 @token_required
 def update_ticket(ticket_id):
@@ -64,13 +62,12 @@ def update_ticket(ticket_id):
 
     if "description" in data:
         ticket.description = data["description"]
-    # 🔧 removed phantom 'status'
 
     db.session.commit()
     return service_ticket_schema.jsonify(ticket), 200
 
 
-# Delete ticket
+# === Delete ticket ===
 @service_tickets_bp.route("/<int:ticket_id>", methods=["DELETE"])
 @token_required
 def delete_ticket(ticket_id):
@@ -90,7 +87,7 @@ def delete_ticket(ticket_id):
     return jsonify({"message": f"Ticket {ticket_id} deleted"}), 200
 
 
-# Assign a mechanic
+# === Assign a mechanic ===
 @service_tickets_bp.route("/<int:ticket_id>/assign/<int:mech_id>", methods=["POST"])
 def assign_mechanic(ticket_id, mech_id):
     ticket = ServiceTicket.query.get_or_404(ticket_id)
@@ -104,7 +101,7 @@ def assign_mechanic(ticket_id, mech_id):
     return service_ticket_schema.jsonify(ticket), 200
 
 
-# Remove a mechanic
+# === Remove a mechanic ===
 @service_tickets_bp.route("/<int:ticket_id>/remove/<int:mech_id>", methods=["POST"])
 def remove_mechanic(ticket_id, mech_id):
     ticket = ServiceTicket.query.get_or_404(ticket_id)
@@ -118,7 +115,7 @@ def remove_mechanic(ticket_id, mech_id):
     return service_ticket_schema.jsonify(ticket), 200
 
 
-# Add multiple parts
+# === Add multiple parts (using many-to-many table) ===
 @service_tickets_bp.route("/<int:ticket_id>/parts", methods=["POST"])
 @limiter.limit("5 per minute")
 def add_parts_to_ticket(ticket_id):
@@ -139,17 +136,16 @@ def add_parts_to_ticket(ticket_id):
 
         part = Inventory.query.get_or_404(part_id)
 
-        link = ServiceTicketInventory(
-            service_ticket_id=ticket.id,
-            inventory_id=part.id,
-            quantity=quantity
-        )
-        db.session.add(link)
-        added_parts.append(f"{quantity} x {part.name}")
+        # Simply append part to ticket.parts many-to-many relationship
+        if part not in ticket.parts:
+            ticket.parts.append(part)
+            added_parts.append(f"{quantity} x {part.name}")
+        else:
+            added_parts.append(f"{part.name} already linked")
 
     db.session.commit()
 
     return jsonify({
-        "message": f"Added parts to Service Ticket {ticket.id}",
+        "message": f"Updated Service Ticket {ticket.id} parts",
         "details": added_parts
     }), 201

@@ -1,80 +1,98 @@
+import os
 from flask import Flask
 from flask_cors import CORS
+from flask_swagger_ui import get_swaggerui_blueprint
+from dotenv import load_dotenv
+
 from app.extensions import db, ma, migrate, limiter, cache
 from app.blueprints.mechanics import mechanics_bp
 from app.blueprints.service_tickets import service_tickets_bp
 from app.blueprints.customers import customers_bp
 from app.blueprints.inventory import inventory_bp
-from flask_swagger_ui import get_swaggerui_blueprint
-import os
+from config import DevelopmentConfig, TestingConfig, ProductionConfig
 
-SWAGGER_URL = "/api/docs"
 
-def create_app(config_class=None):
-    if config_class is None:
-        config_class = os.getenv("FLASK_CONFIG", "config.ProductionConfig")
-    is_render = os.getenv("RENDER", False)
-    base_url = "https://mechanics-api.onrender.com" if is_render else "http://127.0.0.1:5000"
-    API_URL = f"{base_url}/static/swagger.yaml"
+# === load environment variables ===
+load_dotenv()
 
-    swagger_blueprint = get_swaggerui_blueprint(
-        SWAGGER_URL,
-        API_URL,
-        config={"app_name": "Mechanic Workshop API"}
-    )
+SWAGGER_URL = "/api/docs"  # swagger endpoint
 
+
+# === helper: choose config dynamically ===
+def _pick_config():
+    env = os.getenv("FLASK_ENV", "production").lower()
+    return {
+        "development": DevelopmentConfig,
+        "testing": TestingConfig,
+        "production": ProductionConfig,
+    }.get(env, ProductionConfig)
+
+
+# === create app factory ===
+def create_app(config_obj=None):
     app = Flask(__name__, static_folder="static")
 
-    # === Config ===
-    if isinstance(config_class, str):
-        app.config.from_object(config_class)
-    else:
-        app.config.from_object(config_class)
+    # pick config
+    cfg = _pick_config()
+    app.config.from_object(config_obj or cfg)
 
-    print(f"[create_app] Loaded config: {config_class}, DB = {app.config.get('SQLALCHEMY_DATABASE_URI')}")
+    print(f"[create_app] FLASK_ENV={os.getenv('FLASK_ENV')}, using {cfg.__name__}")
+    print(f"[create_app] DB URI → {app.config['SQLALCHEMY_DATABASE_URI']}")
 
-    # === Enable CORS for Swagger + React ===
-    CORS(
-        app,
-        resources={r"/*": {"origins": [
-            "https://mechanics-api.onrender.com",
-            "https://react-mechanic-api.onrender.com",
-            "http://127.0.0.1:5000",
-            "http://localhost:5000",   
-            "http://127.0.0.1:5173",
-            "http://localhost:5173"
-        ]}},
-        supports_credentials=True
+    # === enable CORS ===
+    CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+
+    # === swagger setup (switch base automatically for Render vs local) ===
+    base_api_url = "/static/swagger.yaml"
+    if os.getenv("FLASK_ENV") == "production":
+        base_api_url = "https://mechanics-api.onrender.com/static/swagger.yaml"
+
+    swagger_bp = get_swaggerui_blueprint(
+        base_url=SWAGGER_URL,
+        api_url=base_api_url,
+        config={"app_name": "Mechanic Workshop API"},
     )
+    app.register_blueprint(swagger_bp, url_prefix=SWAGGER_URL)
 
-    # === Init extensions ===
+    # === init extensions ===
     db.init_app(app)
     ma.init_app(app)
     migrate.init_app(app, db)
     limiter.init_app(app)
     cache.init_app(app)
 
-    # === Auto-init DB on free Render (SQLite fallback) ===
+    # === auto create tables locally ===
     with app.app_context():
-        uri = app.config.get("SQLALCHEMY_DATABASE_URI", "")
-        if isinstance(uri, str) and "sqlite" in uri.lower():
-            try:
-                db.create_all()
-                print("[DB] create_all() executed (SQLite) — tables ready for Try it out")
-            except Exception as e:
-                print(f"[DB] create_all() skipped/error: {e}")
+        uri = (app.config.get("SQLALCHEMY_DATABASE_URI") or "").lower()
+        if "sqlite" in uri:
+            db.create_all()
+            print("[DB] SQLite tables ensured locally")
 
-    # === Register blueprints ===
+    # === register blueprints ===
     app.register_blueprint(mechanics_bp)
     app.register_blueprint(service_tickets_bp)
-    app.register_blueprint(inventory_bp, url_prefix="/inventory")
     app.register_blueprint(customers_bp)
-    app.register_blueprint(swagger_blueprint, url_prefix=SWAGGER_URL)
+    app.register_blueprint(inventory_bp, url_prefix="/inventory")
 
-    @app.route("/")
-    def home():
-        return {"message": "Mechanics API is live 🚀"}, 200
-
-    print(f"[create_app] Running on Render={is_render}, Base URL={base_url}")
+    # === base route ===
+    @app.get("/")
+    def root():
+        return {
+            "message": "Mechanic Workshop API is live",
+            "docs": "/api/docs",
+            "examples": {
+                "mechanic_login": {"email": "alex@shop.com", "password": "password123"},
+                "customer_create": {
+                    "name": "John Doe",
+                    "email": "john@example.com",
+                    "phone": "312-555-1111",
+                    "car": "Honda Civic"
+                },
+                "ticket_create": {
+                    "description": "Brake pad replacement",
+                    "customer_id": 1
+                }
+            },
+        }, 200
 
     return app

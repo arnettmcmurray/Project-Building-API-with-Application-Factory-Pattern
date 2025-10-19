@@ -20,6 +20,21 @@ ticket_mechanics = Table(
     )
 )
 
+# === Junction table for parts <-> service tickets ===
+ticket_parts = Table(
+    "service_ticket_parts",
+    db.Model.metadata,
+    Column(
+        "service_ticket_id",
+        Integer,
+        ForeignKey("service_ticket.id", name="fk_service_ticket_parts_ticket_id")
+    ),
+    Column(
+        "inventory_id",
+        Integer,
+        ForeignKey("inventory.id", name="fk_service_ticket_parts_inventory_id")
+    )
+)
 
 # === Mechanic model ===
 class Mechanic(db.Model):
@@ -69,7 +84,7 @@ class ServiceTicket(db.Model):
 
     customer = relationship("Customer", back_populates="tickets")
     mechanics = relationship("Mechanic", secondary=ticket_mechanics, back_populates="tickets")
-    parts = relationship("ServiceTicketInventory", back_populates="ticket")
+    parts = relationship("Inventory", secondary=ticket_parts, back_populates="tickets")
 
 
 # === Inventory model ===
@@ -79,25 +94,6 @@ class Inventory(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     price: Mapped[float] = mapped_column(Float, nullable=False)
-    quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=0)  # ✅ Added
+    quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
-    tickets = relationship("ServiceTicketInventory", back_populates="part")
-
-
-# === Junction model with quantity ===
-class ServiceTicketInventory(db.Model):
-    __tablename__ = "service_ticket_inventory"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    service_ticket_id: Mapped[int] = mapped_column(
-        Integer,
-        ForeignKey("service_ticket.id", name="fk_service_ticket_inventory_ticket_id")
-    )
-    inventory_id: Mapped[int] = mapped_column(
-        Integer,
-        ForeignKey("inventory.id", name="fk_service_ticket_inventory_inventory_id")
-    )
-    quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
-
-    ticket = relationship("ServiceTicket", back_populates="parts")
-    part = relationship("Inventory", back_populates="tickets")
+    tickets = relationship("ServiceTicket", secondary=ticket_parts, back_populates="parts")

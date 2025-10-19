@@ -1,771 +1,338 @@
-openapi: 3.0.1
+openapi: 3.0.3
 info:
   title: Mechanic Workshop API
-  version: 1.0.0
-  description:
-    "Backend API for managing mechanics, customers, inventory, and service
-    tickets. Includes JWT authentication, admin privileges, and CRUD operations.
+  version: "1.0.0"
+  description: |
+    CRUD for mechanics, customers, inventory, and service tickets.
+    Auth is JWT via `Authorization: Bearer <token>`.
 
-    "
 servers:
-  - url: https://mechanics-api.onrender.com
-    description: Render production
   - url: http://127.0.0.1:5000
-    description: Local development
+    description: Local
+  - url: https://mechanics-api.onrender.com
+    description: Render (production)
+
 tags:
   - name: Mechanics
+    description: Endpoints for mechanic management
   - name: Customers
+    description: Endpoints for customer management
   - name: Inventory
-  - name: Service Tickets
-  - name: Auth
-components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-  schemas:
-    Mechanic:
-      type: object
-      properties:
-        id:
-          type: integer
-          example: 1
-        name:
-          type: string
-          example: Taylor Admin
-        email:
-          type: string
-          example: admin@shop.com
-        specialty:
-          type: string
-          example: ADMIN
-    Customer:
-      type: object
-      properties:
-        id:
-          type: integer
-          example: 1
-        name:
-          type: string
-          example: John Doe
-        email:
-          type: string
-          example: john@example.com
-        phone:
-          type: string
-          example: 312-555-1111
-        car:
-          type: string
-          example: Honda Civic
-    Inventory:
-      type: object
-      properties:
-        id:
-          type: integer
-          example: 1
-        name:
-          type: string
-          example: Brake Pads
-        price:
-          type: number
-          example: 49.99
-        quantity:
-          type: integer
-          example: 20
-    ServiceTicket:
-      type: object
-      properties:
-        id:
-          type: integer
-          example: 1
-        description:
-          type: string
-          example: Brake pad replacement
-        status:
-          type: string
-          example: open
-        date:
-          type: string
-          example: "2025-10-18T00:00:00Z"
-        customer_id:
-          type: integer
+    description: Endpoints for inventory management
+  - name: ServiceTickets
+    description: Endpoints for service ticket creation and tracking
+  - name: NegativeTests
+    description: Endpoints for intentional failure scenarios
+
 paths:
+  # ---------------- Mechanics ----------------
   /mechanics/ping:
     get:
-      tags:
-        - Mechanics
-      summary: Check server health
+      tags: [Mechanics]
+      summary: Check if the server is running
       responses:
         "200":
-          description: OK
+          description: Server is running
+
   /mechanics/login:
     post:
-      tags: [Auth]
-      summary: Login mechanic (get JWT)
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [email, password]
-              properties:
-                email: { type: string, format: email }
-                password: { type: string }
+      tags: [Mechanics]
+      summary: Login Mechanic
+      description: Authenticate and retrieve JWT token
       parameters:
-        - name: email
-          in: query
-          schema: { type: string, example: "admin@shop.com" }
-        - name: password
-          in: query
-          schema: { type: string, example: "admin123" }
+        - name: body
+          in: body
+          example:
+            {
+              "email": "alex.johnson@autoshop.com",
+              "password": "MySecurePass123!",
+            }
       responses:
         "200":
-          description: Token returned
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message: { type: string, example: "Login successful" }
-                  token:
-                    { type: string, description: "Paste this into Authorize" }
-              example:
-                message: "Login successful"
-                token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwicm9sZSI6Im1lY2hhbmljIiwiaWF0IjoxNzI5MjQxNjAwLCJleHAiOjE3NjA3NDE2MDB9.uPqvB1e0mO2dW7o6b5LwV0f9k2m3Q4r5s6T7u8V9w0x"
-        "401":
-          description: Invalid credentials
+          description: JWT token returned
 
   /mechanics:
     post:
-      tags:
-        - Mechanics
-      summary: Register new mechanic
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - name
-                - email
-                - password
-              properties:
-                name:
-                  type: string
-                email:
-                  type: string
-                  format: email
-                password:
-                  type: string
-                specialty:
-                  type: string
+      tags: [Mechanics]
+      summary: Login mechanic
       parameters:
-        - name: name
-          in: query
-          schema:
-            type: string
-            example: Alex Rivera
-        - name: email
-          in: query
-          schema:
-            type: string
-            example: alex@shop.com
-        - name: password
-          in: query
-          schema:
-            type: string
-            example: password123
-        - name: specialty
-          in: query
-          schema:
-            type: string
-            example: Brakes
+        - name: body
+          in: body
+          example:
+            {
+              "name": "Alex Johnson",
+              "email": "alex.johnson@autoshop.com",
+              "password": "MySecurePass123!",
+              "specialty": "Transmission Repair",
+            }
       responses:
         "201":
-          description: Created
-        "409":
-          description: Email already exists
+          description: Logged in
+
     get:
-      tags:
-        - Mechanics
+      tags: [Mechanics]
       summary: Get all mechanics
-      security:
-        - bearerAuth: []
       responses:
         "200":
-          description: OK
-        "401":
-          description: Unauthorized
+          description: List of all mechanics
+
   /mechanics/{id}:
     put:
-      tags:
-        - Mechanics
-      summary: Update mechanic (self only)
-      security:
-        - bearerAuth: []
+      tags: [Mechanics]
+      summary: Update mechanic profile
       parameters:
         - name: id
           in: path
           required: true
-          schema:
-            type: integer
-            example: 2
-        - name: name
-          in: query
-          schema:
-            type: string
-            example: Alex Updated
-        - name: specialty
-          in: query
-          schema:
-            type: string
-            example: Engine
-        - name: password
-          in: query
-          schema:
-            type: string
-            example: newPass123!
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                specialty:
-                  type: string
-                password:
-                  type: string
+        - name: body
+          in: body
+          example: { "name": "Alex J.", "specialty": "Brakes" }
       responses:
         "200":
-          description: Updated
-        "403":
-          description: Forbidden
-        "401":
-          description: Unauthorized
+          description: Mechanic updated
     delete:
-      tags:
-        - Mechanics
-      summary: Delete mechanic (self or ADMIN)
-      security:
-        - bearerAuth: []
+      tags: [Mechanics]
+      summary: Delete mechanic
       parameters:
         - name: id
           in: path
           required: true
-          schema:
-            type: integer
-            example: 2
       responses:
         "200":
-          description: Deleted
-        "403":
-          description: Forbidden
-        "401":
-          description: Unauthorized
+          description: Mechanic deleted
+
   /mechanics/my-tickets:
     get:
-      tags:
-        - Mechanics
-      summary: Tickets assigned to logged-in mechanic
-      security:
-        - bearerAuth: []
+      tags: [Mechanics]
+      summary: Get tickets assigned to logged-in mechanic
       responses:
         "200":
-          description: OK
-        "401":
-          description: Unauthorized
+          description: List of tickets for mechanic
+
   /mechanics/top:
     get:
-      tags:
-        - Mechanics
+      tags: [Mechanics]
       summary: Mechanic with most tickets
-      security:
-        - bearerAuth: []
       responses:
         "200":
-          description: OK
-        "401":
-          description: Unauthorized
+          description: Top mechanic by ticket count
+
+  # ---------------- Customers ----------------
   /customers:
+    get:
+      tags: [Customers]
+      summary: Get all customers
+      responses:
+        "200":
+          description: List of customers
     post:
-      tags:
-        - Customers
-      summary: Create customer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - name
-                - email
-              properties:
-                name:
-                  type: string
-                email:
-                  type: string
-                  format: email
-                phone:
-                  type: string
-                car:
-                  type: string
+      tags: [Customers]
+      summary: Create new customer
       parameters:
-        - name: name
-          in: query
-          schema:
-            type: string
-            example: John Doe
-        - name: email
-          in: query
-          schema:
-            type: string
-            example: john@example.com
-        - name: phone
-          in: query
-          schema:
-            type: string
-            example: 312-555-1111
-        - name: car
-          in: query
-          schema:
-            type: string
-            example: Honda Civic
+        - name: body
+          in: body
+          example:
+            {
+              "name": "Jane Doe",
+              "email": "jane.doe@email.com",
+              "phone": "312-555-9020",
+              "car": "2018 Honda Accord LX",
+            }
       responses:
         "201":
-          description: Created
-        "409":
-          description: Email already exists
-    get:
-      tags:
-        - Customers
-      summary: Get all customers
-      security:
-        - bearerAuth: []
-      responses:
-        "200":
-          description: OK
-        "401":
-          description: Unauthorized
+          description: Customer created
+
   /customers/search:
     get:
-      tags:
-        - Customers
+      tags: [Customers]
       summary: Search customer by email
-      security:
-        - bearerAuth: []
       parameters:
         - name: email
           in: query
           required: true
-          schema:
-            type: string
-            example: john@example.com
+          example: jane.doe@email.com
       responses:
         "200":
-          description: OK
-        "400":
-          description: Missing email
-        "404":
-          description: Not found
-        "401":
-          description: Unauthorized
+          description: Matching customer found
+
   /customers/{id}:
     put:
-      tags:
-        - Customers
-      summary: Update customer
-      security:
-        - bearerAuth: []
+      tags: [Customers]
+      summary: Update existing customer
       parameters:
         - name: id
           in: path
           required: true
-          schema:
-            type: integer
-            example: 1
-        - name: name
-          in: query
-          schema:
-            type: string
-            example: John Updated
-        - name: email
-          in: query
-          schema:
-            type: string
-            example: john.new@example.com
-        - name: phone
-          in: query
-          schema:
-            type: string
-            example: 312-555-2222
-        - name: car
-          in: query
-          schema:
-            type: string
-            example: Toyota Camry
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                email:
-                  type: string
-                  format: email
-                phone:
-                  type: string
-                car:
-                  type: string
+        - name: body
+          in: body
+          example: { "phone": "312-555-8888", "car": "2021 Toyota Camry" }
       responses:
         "200":
-          description: Updated
-        "401":
-          description: Unauthorized
-        "409":
-          description: Email already exists
+          description: Customer updated
     delete:
-      tags:
-        - Customers
-      summary: Delete customer
-      security:
-        - bearerAuth: []
+      tags: [Customers]
+      summary: Delete a customer
       parameters:
         - name: id
           in: path
           required: true
-          schema:
-            type: integer
-            example: 1
       responses:
         "200":
-          description: Deleted
-        "401":
-          description: Unauthorized
+          description: Customer deleted
+
+  # ---------------- Inventory ----------------
   /inventory:
     get:
-      tags:
-        - Inventory
-      summary: Get all parts
+      tags: [Inventory]
+      summary: Get all inventory parts
       responses:
         "200":
-          description: OK
+          description: List of parts
     post:
-      tags:
-        - Inventory
-      summary: Create part
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - name
-                - price
-              properties:
-                name:
-                  type: string
-                price:
-                  type: number
-                quantity:
-                  type: integer
+      tags: [Inventory]
+      summary: Add a new part to inventory
       parameters:
-        - name: name
-          in: query
-          schema:
-            type: string
-            example: Brake Pads
-        - name: price
-          in: query
-          schema:
-            type: number
-            example: 49.99
-        - name: quantity
-          in: query
-          schema:
-            type: integer
-            example: 20
+        - name: body
+          in: body
+          example:
+            { "name": "Brake Pads - Front Set", "price": 89.99, "quantity": 40 }
       responses:
         "201":
-          description: Created
+          description: Part added to inventory
+
   /inventory/{id}:
     get:
-      tags:
-        - Inventory
+      tags: [Inventory]
       summary: Get part by ID
       parameters:
         - name: id
           in: path
           required: true
-          schema:
-            type: integer
-            example: 1
       responses:
         "200":
-          description: OK
+          description: Part details
     put:
-      tags:
-        - Inventory
-      summary: Update part
+      tags: [Inventory]
+      summary: Update inventory part
       parameters:
         - name: id
           in: path
           required: true
-          schema:
-            type: integer
-            example: 1
-        - name: name
-          in: query
-          schema:
-            type: string
-            example: Rotor
-        - name: price
-          in: query
-          schema:
-            type: number
-            example: 120.0
-        - name: quantity
-          in: query
-          schema:
-            type: integer
-            example: 10
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                price:
-                  type: number
-                quantity:
-                  type: integer
+        - name: body
+          in: body
+          example:
+            { "name": "Brake Pads - Rear Set", "price": 92.50, "quantity": 55 }
       responses:
         "200":
-          description: Updated
+          description: Part updated
     delete:
-      tags:
-        - Inventory
-      summary: Delete part
+      tags: [Inventory]
+      summary: Delete inventory part
       parameters:
         - name: id
           in: path
           required: true
-          schema:
-            type: integer
-            example: 1
       responses:
         "200":
-          description: Deleted
+          description: Part deleted
+
+  # ---------------- Service Tickets ----------------
   /service_tickets:
     get:
-      tags:
-        - Service Tickets
-      summary: Get all tickets
-      security:
-        - bearerAuth: []
+      tags: [ServiceTickets]
+      summary: Get all service tickets
       responses:
         "200":
-          description: OK
+          description: List of service tickets
     post:
-      tags:
-        - Service Tickets
-      summary: Create ticket
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - description
-                - customer_id
-              properties:
-                description:
-                  type: string
-                customer_id:
-                  type: integer
+      tags: [ServiceTickets]
+      summary: Create new service ticket
       parameters:
-        - name: description
-          in: query
-          schema:
-            type: string
-            example: Brake pad replacement
-        - name: customer_id
-          in: query
-          schema:
-            type: integer
-            example: 1
+        - name: body
+          in: body
+          example:
+            {
+              "description": "Oil change and tire rotation",
+              "status": "Open",
+              "customer_id": 1,
+            }
       responses:
         "201":
-          description: Created
-  /service_tickets/{id}:
-    get:
-      tags:
-        - Service Tickets
-      summary: Get a ticket
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-            example: 1
-      responses:
-        "200":
-          description: OK
+          description: Service ticket created
+
+  /service_tickets/{ticket_id}:
     put:
-      tags:
-        - Service Tickets
-      summary: Update ticket
-      security:
-        - bearerAuth: []
+      tags: [ServiceTickets]
+      summary: Update a service ticket
       parameters:
-        - name: id
+        - name: ticket_id
           in: path
           required: true
-          schema:
-            type: integer
-            example: 1
-        - name: description
-          in: query
-          schema:
-            type: string
-            example: Brake + rotor replacement
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                description:
-                  type: string
+        - name: body
+          in: body
+          example:
+            { "description": "Replace spark plugs", "status": "Completed" }
       responses:
         "200":
-          description: Updated
+          description: Ticket updated
     delete:
-      tags:
-        - Service Tickets
-      summary: Delete ticket
-      security:
-        - bearerAuth: []
+      tags: [ServiceTickets]
+      summary: Delete a service ticket
       parameters:
-        - name: id
+        - name: ticket_id
           in: path
           required: true
-          schema:
-            type: integer
-            example: 1
       responses:
         "200":
-          description: Deleted
-  /service_tickets/paginated:
-    get:
-      tags:
-        - Service Tickets
-      summary: Paginated tickets
-      parameters:
-        - name: page
-          in: query
-          schema:
-            type: integer
-            example: 1
-        - name: per_page
-          in: query
-          schema:
-            type: integer
-            example: 5
-      responses:
-        "200":
-          description: OK
+          description: Ticket deleted
+
   /service_tickets/{ticket_id}/assign/{mech_id}:
     post:
-      tags:
-        - Service Tickets
-      summary: Assign mechanic to ticket
+      tags: [ServiceTickets]
+      summary: Assign mechanic to a ticket
       parameters:
         - name: ticket_id
           in: path
           required: true
-          schema:
-            type: integer
-            example: 1
         - name: mech_id
           in: path
           required: true
-          schema:
-            type: integer
-            example: 2
       responses:
         "200":
-          description: OK
-  /service_tickets/{ticket_id}/remove/{mech_id}:
-    post:
-      tags:
-        - Service Tickets
-      summary: Remove mechanic from ticket
-      parameters:
-        - name: ticket_id
-          in: path
-          required: true
-          schema:
-            type: integer
-            example: 1
-        - name: mech_id
-          in: path
-          required: true
-          schema:
-            type: integer
-            example: 2
-      responses:
-        "200":
-          description: OK
+          description: Mechanic assigned to ticket
+
   /service_tickets/{ticket_id}/parts:
     post:
-      tags:
-        - Service Tickets
-      summary: Add parts to ticket
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                parts:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      part_id:
-                        type: integer
-                      quantity:
-                        type: integer
-            # body schema only; examples moved to parameter table not required for array body
+      tags: [ServiceTickets]
+      summary: Add parts to service ticket
       parameters:
         - name: ticket_id
           in: path
           required: true
-          schema:
-            type: integer
-            example: 1
+        - name: body
+          in: body
+          example: { "part_id": 3, "quantity": 2 }
       responses:
         "201":
-          description: Parts added
-security:
-  - bearerAuth: []
+          description: Parts added to ticket
+
+  # ---------------- Negative Tests ----------------
+  /negative/mechanics-no-token:
+    get:
+      tags: [NegativeTests]
+      summary: Get mechanics without token
+      responses:
+        "401":
+          description: Unauthorized
+
+  /negative/customer-missing-email:
+    post:
+      tags: [NegativeTests]
+      summary: Attempt to create customer with missing email
+      parameters:
+        - name: body
+          in: body
+          example: { "name": "Missing Email Test" }
+      responses:
+        "400":
+          description: Invalid input
