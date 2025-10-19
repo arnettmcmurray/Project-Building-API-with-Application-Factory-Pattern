@@ -40,9 +40,9 @@ def create_app(config_class=None):
             "https://mechanics-api.onrender.com",
             "https://react-mechanic-api.onrender.com",
             "http://127.0.0.1:5000",
-            "http://localhost:5000",
+            "http://localhost:5000",   
             "http://127.0.0.1:5173",
-            "http://localhost:5173"git statu
+            "http://localhost:5173"
         ]}},
         supports_credentials=True
     )
@@ -53,6 +53,16 @@ def create_app(config_class=None):
     migrate.init_app(app, db)
     limiter.init_app(app)
     cache.init_app(app)
+
+    # === Auto-init DB on free Render (SQLite fallback) ===
+    with app.app_context():
+        uri = app.config.get("SQLALCHEMY_DATABASE_URI", "")
+        if isinstance(uri, str) and "sqlite" in uri.lower():
+            try:
+                db.create_all()
+                print("[DB] create_all() executed (SQLite) — tables ready for Try it out")
+            except Exception as e:
+                print(f"[DB] create_all() skipped/error: {e}")
 
     # === Register blueprints ===
     app.register_blueprint(mechanics_bp)
