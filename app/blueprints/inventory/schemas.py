@@ -1,19 +1,17 @@
 from app.extensions import ma
 from marshmallow import fields
-from app.models import Mechanic, Customer, ServiceTicket, Inventory
-from app.blueprints.service_tickets.schemas import ServiceTicketSchema
+from app.models import Inventory
 
-class InventorySchema(ma.SQLAlchemySchema):
+class InventorySchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Inventory
         load_instance = True
+        include_fk = True
 
     id = ma.auto_field(dump_only=True)
     name = ma.auto_field(required=True)
     price = ma.auto_field(required=True)
-
-    # Nested: show tickets this part is used in
-    tickets = fields.List(fields.Nested(lambda: ServiceTicketSchema(exclude=("parts",))))
+    quantity = ma.auto_field(required=True)
 
 inventory_schema = InventorySchema()
 inventories_schema = InventorySchema(many=True)

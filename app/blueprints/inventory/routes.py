@@ -2,19 +2,17 @@ from flask import request, jsonify
 from app.extensions import db
 from . import inventory_bp
 from app.models import Inventory
-from .schemas import InventorySchema
+from .schemas import inventory_schema, inventories_schema
 from marshmallow import ValidationError
 from sqlalchemy.exc import IntegrityError
-
-inventory_schema = InventorySchema()
-inventories_schema = InventorySchema(many=True)
-
+from app.utils.auth import token_required
 
 # === Create part ===
 @inventory_bp.route("", methods=["POST"])
+@token_required
 def create_part():
     try:
-        part = inventory_schema.load(request.json)
+        part = inventory_schema.load(request.get_json() or {})
     except ValidationError as err:
         return jsonify({"errors": err.messages}), 400
 
@@ -25,28 +23,29 @@ def create_part():
         db.session.rollback()
         return jsonify({"error": "Part already exists"}), 409
 
-    return inventory_schema.jsonify(part), 201
+    return jsonify(inventory_schema.dump(part)), 201
 
 
 # === Get all parts ===
 @inventory_bp.route("", methods=["GET"])
 def get_parts():
     parts = Inventory.query.all()
-    return inventories_schema.jsonify(parts), 200
+    return jsonify(inventories_schema.dump(parts)), 200
 
 
 # === Get single part ===
 @inventory_bp.route("/<int:id>", methods=["GET"])
 def get_part(id):
     part = Inventory.query.get_or_404(id)
-    return inventory_schema.jsonify(part), 200
+    return jsonify(inventory_schema.dump(part)), 200
 
 
 # === Update part ===
 @inventory_bp.route("/<int:id>", methods=["PUT"])
+@token_required
 def update_part(id):
     part = Inventory.query.get_or_404(id)
-    data = request.json or {}
+    data = request.get_json() or {}
 
     try:
         updated = inventory_schema.load(data, instance=part, partial=True)
@@ -54,11 +53,12 @@ def update_part(id):
         return jsonify({"errors": err.messages}), 400
 
     db.session.commit()
-    return inventory_schema.jsonify(updated), 200
+    return jsonify(inventory_schema.dump(updated)), 200
 
 
 # === Delete part ===
 @inventory_bp.route("/<int:id>", methods=["DELETE"])
+@token_required
 def delete_part(id):
     part = Inventory.query.get_or_404(id)
     try:

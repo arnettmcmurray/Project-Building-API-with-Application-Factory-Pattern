@@ -4,39 +4,22 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 
-# === Junction table for mechanics <-> service tickets ===
+# === Junctions ===
 ticket_mechanics = Table(
     "service_mechanic",
     db.Model.metadata,
-    Column(
-        "service_ticket_id",
-        Integer,
-        ForeignKey("service_ticket.id", name="fk_service_mechanic_ticket_id")
-    ),
-    Column(
-        "mechanic_id",
-        Integer,
-        ForeignKey("mechanic.id", name="fk_service_mechanic_mechanic_id")
-    )
+    Column("service_ticket_id", Integer, ForeignKey("service_ticket.id")),
+    Column("mechanic_id", Integer, ForeignKey("mechanic.id"))
 )
 
-# === Junction table for parts <-> service tickets ===
 ticket_parts = Table(
     "service_ticket_parts",
     db.Model.metadata,
-    Column(
-        "service_ticket_id",
-        Integer,
-        ForeignKey("service_ticket.id", name="fk_service_ticket_parts_ticket_id")
-    ),
-    Column(
-        "inventory_id",
-        Integer,
-        ForeignKey("inventory.id", name="fk_service_ticket_parts_inventory_id")
-    )
+    Column("service_ticket_id", Integer, ForeignKey("service_ticket.id")),
+    Column("inventory_id", Integer, ForeignKey("inventory.id"))
 )
 
-# === Mechanic model ===
+# === Mechanic ===
 class Mechanic(db.Model):
     __tablename__ = "mechanic"
 
@@ -44,11 +27,10 @@ class Mechanic(db.Model):
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     email: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(200), nullable=False)
-    specialty: Mapped[str] = mapped_column(String(100), nullable=True)
+    specialty: Mapped[str] = mapped_column(String(100))
 
     tickets = relationship("ServiceTicket", secondary=ticket_mechanics, back_populates="mechanics")
 
-    # === Password helpers ===
     def set_password(self, password: str):
         self.password_hash = generate_password_hash(password)
 
@@ -56,20 +38,20 @@ class Mechanic(db.Model):
         return check_password_hash(self.password_hash, password)
 
 
-# === Customer model ===
+# === Customer ===
 class Customer(db.Model):
     __tablename__ = "customer"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     email: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
-    phone: Mapped[str] = mapped_column(String(20), nullable=True)
-    car: Mapped[str] = mapped_column(String(100), nullable=True)
+    phone: Mapped[str] = mapped_column(String(20))
+    car: Mapped[str] = mapped_column(String(100))
 
     tickets = relationship("ServiceTicket", back_populates="customer", cascade="all, delete-orphan")
 
 
-# === ServiceTicket model ===
+# === ServiceTicket ===
 class ServiceTicket(db.Model):
     __tablename__ = "service_ticket"
 
@@ -77,17 +59,14 @@ class ServiceTicket(db.Model):
     description: Mapped[str] = mapped_column(String(200), nullable=False)
     date: Mapped[datetime] = mapped_column(default=datetime.utcnow, nullable=False)
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="Open")
-    customer_id: Mapped[int] = mapped_column(
-        ForeignKey("customer.id", name="fk_service_ticket_customer_id"),
-        nullable=False
-    )
+    customer_id: Mapped[int] = mapped_column(ForeignKey("customer.id"), nullable=False)
 
     customer = relationship("Customer", back_populates="tickets")
     mechanics = relationship("Mechanic", secondary=ticket_mechanics, back_populates="tickets")
     parts = relationship("Inventory", secondary=ticket_parts, back_populates="tickets")
 
 
-# === Inventory model ===
+# === Inventory ===
 class Inventory(db.Model):
     __tablename__ = "inventory"
 

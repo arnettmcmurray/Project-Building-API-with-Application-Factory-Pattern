@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import request, jsonify
 from app.extensions import db, cache
 from app.models import Customer
 from app.utils.auth import token_required
@@ -9,11 +9,11 @@ from . import customers_bp
 
 print(">>> customers/routes.py loaded")
 
-# === Create customer ===
+# === Create customer === (open for demo)
 @customers_bp.route("", methods=["POST"])
-def create_customer():   # no token_required at moment
+def create_customer():
     try:
-        customer = customer_schema.load(request.json)
+        customer = customer_schema.load(request.get_json() or {})
     except ValidationError as err:
         return jsonify({"errors": err.messages}), 400
 
@@ -22,9 +22,9 @@ def create_customer():   # no token_required at moment
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
-        return jsonify({"error": "Email already exists"}), 409   
+        return jsonify({"error": "Email already exists"}), 409
 
-    return customer_schema.jsonify(customer), 201
+    return jsonify(customer_schema.dump(customer)), 201
 
 
 # === Search customer by email ===
@@ -39,17 +39,16 @@ def search_customer_by_email():
     if not customer:
         return jsonify({"error": "Customer not found"}), 404
 
-    return customer_schema.jsonify(customer), 200
+    return jsonify(customer_schema.dump(customer)), 200
 
 
 # === Get all customers ===
 @customers_bp.route("", methods=["GET"])
 @token_required
-@cache.cached(timeout=60)   # cache results for 60 seconds
+@cache.cached(timeout=60)
 def get_customers():
     customers = Customer.query.all()
-    return customers_schema.jsonify(customers), 200
-
+    return jsonify(customers_schema.dump(customers)), 200
 
 
 # === Update a customer ===
@@ -57,24 +56,19 @@ def get_customers():
 @token_required
 def update_customer(id):
     customer = Customer.query.get_or_404(id)
-    data = request.json or {}
+    data = request.get_json() or {}
 
-    if "name" in data:
-        customer.name = data["name"]
-    if "email" in data:
-        customer.email = data["email"]
-    if "phone" in data:
-        customer.phone = data["phone"]
-    if "car" in data:
-        customer.car = data["car"]
+    for field in ("name", "email", "phone", "car"):
+        if field in data:
+            setattr(customer, field, data[field])
 
-    try:   # IntegrityError handling
+    try:
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
         return jsonify({"error": "Email already exists"}), 409
 
-    return customer_schema.jsonify(customer), 200
+    return jsonify(customer_schema.dump(customer)), 200
 
 
 # === Delete a customer ===
@@ -82,7 +76,6 @@ def update_customer(id):
 @token_required
 def delete_customer(id):
     customer = Customer.query.get_or_404(id)
-
     db.session.delete(customer)
     db.session.commit()
     return jsonify({"message": "Customer deleted"}), 200

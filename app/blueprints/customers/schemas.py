@@ -1,7 +1,6 @@
 from app.extensions import ma
 from marshmallow import fields
-from app.models import Mechanic, Customer, ServiceTicket, Inventory
-from app.blueprints.service_tickets.schemas import ServiceTicketSchema
+from app.models import Customer
 
 class CustomerSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
@@ -14,10 +13,7 @@ class CustomerSchema(ma.SQLAlchemyAutoSchema):
     email = ma.auto_field(required=True)
     phone = ma.auto_field()
     car = ma.auto_field()
-
-    # Nested: show customer's tickets
-    tickets = fields.List(fields.Nested(lambda: ServiceTicketSchema(exclude=("customer",))))
+    # Optional: tickets can be exposed later via ServiceTicketSchema if desired
 
 customer_schema = CustomerSchema()
 customers_schema = CustomerSchema(many=True)
-
