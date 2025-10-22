@@ -1,16 +1,21 @@
-from app import create_app
 import os
 from dotenv import load_dotenv
+from app import create_app
+from config import DevelopmentConfig, TestingConfig, ProductionConfig
 
-# === Load environment variables ===
 load_dotenv()
 
-# Pick config dynamically based on FLASK_ENV
 env = os.getenv("FLASK_ENV", "production").lower()
-config_name = f"config.{env.capitalize()}Config"
-
 print(f"[flask_app] Environment: {env}")
-app = create_app(config_name)
+
+config_map = {
+    "development": DevelopmentConfig,
+    "testing": TestingConfig,
+    "production": ProductionConfig,
+}
+config_class = config_map.get(env, ProductionConfig)
+
+app = create_app(config_class)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))

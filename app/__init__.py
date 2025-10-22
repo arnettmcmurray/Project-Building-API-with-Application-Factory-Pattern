@@ -4,7 +4,7 @@ from flask_cors import CORS
 from flask_swagger_ui import get_swaggerui_blueprint
 from dotenv import load_dotenv
 
-# extensions
+# === Extensions ===
 from app.extensions import db, ma, migrate, limiter, cache
 from app.blueprints.mechanics import mechanics_bp
 from app.blueprints.service_tickets import service_tickets_bp
@@ -12,12 +12,11 @@ from app.blueprints.customers import customers_bp
 from app.blueprints.inventory import inventory_bp
 from config import DevelopmentConfig, TestingConfig, ProductionConfig
 
-# === Load environment variables ===
+# === Load env ===
 load_dotenv()
 SWAGGER_URL = "/api/docs"
 
 
-# === Pick config dynamically ===
 def _pick_config():
     env = os.getenv("FLASK_ENV", "production").lower()
     return {
@@ -27,22 +26,24 @@ def _pick_config():
     }.get(env, ProductionConfig)
 
 
-# === App Factory ===
 def create_app(config_obj=None):
     app = Flask(__name__, static_folder="static")
     cfg = _pick_config()
     app.config.from_object(config_obj or cfg)
 
-    # === SQLAlchemy engine stability ===
+    # === SQLAlchemy engine ===
     app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
         "pool_pre_ping": True,
         "pool_recycle": 280,
     }
 
-    # === Enable CORS ===
-    CORS(app)
+    # === CORS (local + Render frontend) ===
+    CORS(app, origins=[
+        "http://localhost:5173",
+        "https://mechanics-api.onrender.com"
+    ])
 
-    # === Swagger setup ===
+    # === Swagger ===
     env = os.getenv("FLASK_ENV", "production").lower()
     api_url = (
         "http://127.0.0.1:5000/static/swagger.yaml"
@@ -68,7 +69,7 @@ def create_app(config_obj=None):
     limiter.init_app(app)
     cache.init_app(app)
 
-    # === Auto-seed for local SQLite ===
+    # === Auto-seed only if local SQLite ===
     with app.app_context():
         uri = app.config.get("SQLALCHEMY_DATABASE_URI", "").lower()
         if "sqlite" in uri:
@@ -81,10 +82,8 @@ def create_app(config_obj=None):
 
                 admin = Mechanic(name="Admin User", email="admin@shop.com", specialty="Admin")
                 admin.set_password("admin123")
-
                 alex = Mechanic(name="Alex Rivera", email="alex@shop.com", specialty="Brakes")
                 alex.set_password("password123")
-
                 db.session.add_all([admin, alex])
                 db.session.commit()
 
@@ -105,13 +104,12 @@ def create_app(config_obj=None):
 
                 print("✅ Auto-seed complete — default data ready.")
 
-    # === Register blueprints ===
+    # === Blueprints ===
     app.register_blueprint(mechanics_bp, url_prefix="/mechanics")
     app.register_blueprint(service_tickets_bp, url_prefix="/service_tickets")
     app.register_blueprint(customers_bp, url_prefix="/customers")
     app.register_blueprint(inventory_bp, url_prefix="/inventory")
 
-    # === Root ===
     @app.get("/")
     def root():
         return {
