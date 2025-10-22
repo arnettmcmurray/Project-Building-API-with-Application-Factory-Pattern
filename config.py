@@ -1,8 +1,9 @@
+# === config.py ===
 import os
 
 class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SECRET_KEY = os.getenv("SECRET_KEY", "fallback_key")
+    SECRET_KEY = os.getenv("SECRET_KEY", "dev_key")
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", SECRET_KEY)
 
 
@@ -17,14 +18,18 @@ class TestingConfig(Config):
 
 class ProductionConfig(Config):
     uri = os.getenv("DATABASE_URL")
-    if uri and uri.startswith("postgres://"):
+
+    if not uri:
+        raise RuntimeError("DATABASE_URL not set — cannot start production")
+
+    if uri.startswith("postgres://"):
         uri = uri.replace("postgres://", "postgresql://", 1)
 
-    # Enforce SSL for Render Postgres
-    if uri and "sslmode" not in uri and "sqlite" not in uri:
+    if "sslmode" not in uri and "sqlite" not in uri:
         uri = f"{uri}?sslmode=require"
 
-    SQLALCHEMY_DATABASE_URI = uri or "sqlite:///mechanic_shop.db"
-    RATELIMIT_DEFAULT = "100 per minute"
-    CACHE_DEFAULT_TIMEOUT = 300
-
+    SQLALCHEMY_DATABASE_URI = uri
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "connect_args": {"sslmode": "require"},
+        "pool_pre_ping": True,
+    }
