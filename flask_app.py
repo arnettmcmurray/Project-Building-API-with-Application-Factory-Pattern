@@ -17,5 +17,5 @@ config_class = config_map.get(env, ProductionConfig)
 
 app = create_app(config_class)
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
+# === Remove app.run(); Gunicorn handles this in Render ===
+# Local dev still works fine with: flask run

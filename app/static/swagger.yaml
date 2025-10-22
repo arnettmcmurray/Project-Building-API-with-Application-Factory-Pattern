@@ -1,17 +1,18 @@
-openapi: 3.0.3
+openapi: 3.0.1
 info:
-  title: Mechanic Workshop API (Local + Render Sync)
+  title: Mechanic Workshop API
   version: 1.0.0
-  description: |
-    Full backend API for Mechanics, Customers, Inventory, and Service Tickets.
-    Works both locally (SQLite) and on Render (PostgreSQL).
-    Use `/mechanics/login` to obtain a JWT token, then authorize for secured endpoints.
+  description: Flask backend for managing mechanics, customers, inventory, and service tickets
 
 servers:
-  - url: http://127.0.0.1:5000
-    description: Local Development
   - url: https://mechanics-api.onrender.com
-    description: Render Production
+    description: Production server
+  - url: http://127.0.0.1:5000
+    description: Local server
+
+schemes:
+  - https
+  - http
 
 tags:
   - name: Root
