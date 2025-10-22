@@ -1,42 +1,59 @@
-# dev/seed.py — simple working reseed
+# seed.py — unified seed for local + Render
+import os
 from flask import Flask
-from config import DevelopmentConfig
+from dotenv import load_dotenv
+from config import DevelopmentConfig, ProductionConfig
 from app.extensions import db
 from app.models import Mechanic, Customer, Inventory, ServiceTicket
 
+load_dotenv()
+
+# Detect environment and choose config
+env = os.getenv("FLASK_ENV", "production").lower()
+config = DevelopmentConfig if env == "development" else ProductionConfig
+
 app = Flask(__name__)
-app.config.from_object(DevelopmentConfig)
+app.config.from_object(config)
 db.init_app(app)
 
 with app.app_context():
-    print("Dropping + recreating local DB ...")
-    db.drop_all()
-    db.create_all()
+    uri = app.config.get("SQLALCHEMY_DATABASE_URI", "")
+    print(f"Seeding DB: {uri}")
 
-    admin = Mechanic(name="Admin User", email="admin@shop.com", specialty="Admin")
-    admin.set_password("admin123")
+    # Drop only for local SQLite (never nuke production)
+    if "sqlite" in uri:
+        print("Dropping + recreating local DB ...")
+        db.drop_all()
+        db.create_all()
+    else:
+        print("Render/Postgres mode — skipping drop, will insert if empty.")
 
-    alex = Mechanic(name="Alex Rivera", email="alex@shop.com", specialty="Brakes")
-    alex.set_password("password123")
+    if not Mechanic.query.first():
+        admin = Mechanic(name="Admin User", email="admin@shop.com", specialty="Admin")
+        admin.set_password("admin123")
 
-    db.session.add_all([admin, alex])
-    db.session.commit()
+        alex = Mechanic(name="Alex Rivera", email="alex@shop.com", specialty="Brakes")
+        alex.set_password("password123")
+        db.session.add_all([admin, alex])
+        db.session.commit()
 
-    john = Customer(name="John Doe", email="john@example.com", phone="312-555-1111", car="Honda Civic")
-    jane = Customer(name="Jane Smith", email="jane@example.com", phone="312-555-2222", car="Toyota Corolla")
-    db.session.add_all([john, jane])
-    db.session.commit()
+        john = Customer(name="John Doe", email="john@example.com", phone="312-555-1111", car="Honda Civic")
+        jane = Customer(name="Jane Smith", email="Jane@example.com", phone="312-555-2222", car="Toyota Corolla")
+        db.session.add_all([john, jane])
+        db.session.commit()
 
-    brake = Inventory(name="Brake Pads", price=49.99, quantity=20)
-    oil = Inventory(name="Oil Filter", price=9.99, quantity=50)
-    db.session.add_all([brake, oil])
-    db.session.commit()
+        brake = Inventory(name="Brake Pads", price=49.99, quantity=20)
+        oil = Inventory(name="Oil Filter", price=9.99, quantity=50)
+        db.session.add_all([brake, oil])
+        db.session.commit()
 
-    ticket1 = ServiceTicket(description="Brake pad replacement", status="Open", customer_id=john.id)
-    ticket2 = ServiceTicket(description="Oil change", status="Closed", customer_id=jane.id)
-    db.session.add_all([ticket1, ticket2])
-    db.session.commit()
+        ticket1 = ServiceTicket(description="Brake pad replacement", status="Open", customer_id=john.id)
+        ticket2 = ServiceTicket(description="Oil change", status="Closed", customer_id=jane.id)
+        db.session.add_all([ticket1, ticket2])
+        db.session.commit()
 
-    print("✅ Seed complete — test logins:")
-    print("- admin@shop.com / admin123")
-    print("- alex@shop.com / password123")
+        print("✅ Seed complete — default accounts ready:")
+        print("- admin@shop.com / admin123")
+        print("- alex@shop.com / password123")
+    else:
+        print("Mechanics already exist — skipping seed.")

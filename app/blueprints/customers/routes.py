@@ -42,10 +42,10 @@ def get_all_customers():
 @token_required
 def get_one_customer():
     data = request.get_json() or {}
-    cust_id = data.get("id")
-    if not cust_id:
-        return jsonify({"error": "Missing id"}), 400
-    customer = Customer.query.get_or_404(cust_id)
+    email = data.get("email")
+    if not email:
+        return jsonify({"error": "Missing email"}), 400
+    customer = Customer.query.filter_by(email=email).first_or_404()
     return jsonify(customer_schema.dump(customer)), 200
 
 
