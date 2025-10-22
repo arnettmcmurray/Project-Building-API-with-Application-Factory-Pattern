@@ -1,14 +1,31 @@
-openapi: 3.0.1
+openapi: 3.0.3
 info:
-  title: Mechanic Workshop API
-  version: 3.0.0
-  description: >
-    Flattened JSON-body version. Every route takes JSON input.
+  title: Mechanic Workshop API (Local + Render Sync)
+  version: 1.0.0
+  description: |
+    Full backend API for Mechanics, Customers, Inventory, and Service Tickets.
+    Works both locally (SQLite) and on Render (PostgreSQL).
+    Use `/mechanics/login` to obtain a JWT token, then authorize for secured endpoints.
+
 servers:
   - url: http://127.0.0.1:5000
     description: Local Development
   - url: https://mechanics-api.onrender.com
-    description: Production Deployment
+    description: Render Production
+
+tags:
+  - name: Root
+    description: API status check
+  - name: Mechanics
+    description: Manage mechanics and assignments
+  - name: Customers
+    description: Manage customer data
+  - name: Inventory
+    description: Manage parts and stock
+  - name: Service Tickets
+    description: Manage service tickets and part assignments
+  - name: Negative Tests
+    description: Common invalid request checks
 
 components:
   securitySchemes:
@@ -17,19 +34,182 @@ components:
       scheme: bearer
       bearerFormat: JWT
 
+  schemas:
+    Mechanic:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        name: { type: string, example: "Alex Rivera" }
+        email: { type: string, example: "alex@shop.com" }
+        specialty: { type: string, example: "Brakes" }
+
+    Customer:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        name: { type: string, example: "John Doe" }
+        email: { type: string, example: "john@example.com" }
+        phone: { type: string, example: "312-555-1111" }
+        car: { type: string, example: "Honda Civic" }
+
+    Inventory:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        name: { type: string, example: "Brake Pads" }
+        price: { type: number, format: float, example: 49.99 }
+        quantity: { type: integer, example: 20 }
+
+    ServiceTicket:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        description: { type: string, example: "Brake pad replacement" }
+        status: { type: string, example: "Open" }
+        customer_id: { type: integer, example: 1 }
+        date: { type: string, example: "2025-10-22T08:00:00Z" }
+
 security:
   - bearerAuth: []
 
-tags:
-  - name: Customers
-  - name: Mechanics
-  - name: Parts
-  - name: Service Tickets
-
 paths:
-  ###################
-  # CUSTOMERS
-  ###################
+  /:
+    get:
+      tags: [Root]
+      summary: Root endpoint
+      description: Confirms the API is live
+      responses:
+        "200":
+          description: API status and example credentials
+
+  # === MECHANICS ===
+  /mechanics/create:
+    post:
+      tags: [Mechanics]
+      summary: Register a new mechanic
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name: { type: string, example: "Alex Rivera" }
+                email: { type: string, example: "alex@shop.com" }
+                password: { type: string, example: "password123" }
+                specialty: { type: string, example: "Brakes" }
+      responses:
+        "201":
+          description: Mechanic created successfully
+
+  /mechanics/login:
+    post:
+      tags: [Mechanics]
+      summary: Login to obtain JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, example: "alex@shop.com" }
+                password: { type: string, example: "password123" }
+      responses:
+        "200":
+          description: Login successful with JWT token
+
+  /mechanics/get_all:
+    post:
+      tags: [Mechanics]
+      summary: Get all mechanics
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              example: {}
+      responses:
+        "200":
+          description: List of all mechanics
+
+  /mechanics/get_one:
+    post:
+      tags: [Mechanics]
+      summary: Get a mechanic by ID
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id: { type: integer, example: 1 }
+      responses:
+        "200":
+          description: Mechanic details
+
+  /mechanics/update:
+    put:
+      tags: [Mechanics]
+      summary: Update mechanic info
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id: { type: integer, example: 1 }
+                specialty: { type: string, example: "Suspension" }
+                password: { type: string, example: "newpassword123" }
+      responses:
+        "200":
+          description: Mechanic updated
+
+  /mechanics/delete:
+    delete:
+      tags: [Mechanics]
+      summary: Delete mechanic
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id: { type: integer, example: 2 }
+      responses:
+        "200":
+          description: Mechanic deleted
+
+  /mechanics/my_tickets:
+    post:
+      tags: [Mechanics]
+      summary: Get tickets assigned to logged-in mechanic
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Mechanic tickets listed
+
+  /mechanics/top:
+    post:
+      tags: [Mechanics]
+      summary: Get top mechanic by ticket count
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Top mechanic details
+
+  # === CUSTOMERS ===
   /customers/create:
     post:
       tags: [Customers]
@@ -38,395 +218,354 @@ paths:
         required: true
         content:
           application/json:
-            example:
-              name: "John Doe"
-              email: "john@example.com"
-              phone: "312-555-1111"
-              car: "Honda Civic"
+            schema:
+              type: object
+              required: [name, email, phone, car]
+              properties:
+                name: { type: string, example: "John Doe" }
+                email: { type: string, example: "john@example.com" }
+                phone: { type: string, example: "312-555-1111" }
+                car: { type: string, example: "Honda Civic" }
       responses:
-        201:
-          description: Customer created
+        "201":
+          description: Customer created successfully
 
   /customers/get_all:
     post:
       tags: [Customers]
       summary: Get all customers
+      security: [{ bearerAuth: [] }]
       requestBody:
         required: false
         content:
           application/json:
-            example:
-              filter: "optional"
+            schema:
+              type: object
+              example: {}
       responses:
-        200:
-          description: List of customers
+        "200":
+          description: List of all customers
 
   /customers/get_one:
     post:
       tags: [Customers]
-      summary: Get a single customer by ID
+      summary: Get one customer by email
+      security: [{ bearerAuth: [] }]
       requestBody:
         required: true
         content:
           application/json:
-            example:
-              id: 1
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, example: "john@example.com" }
       responses:
-        200:
-          description: Single customer returned
+        "200":
+          description: Customer details
 
   /customers/update:
     put:
       tags: [Customers]
-      summary: Update a customer
+      summary: Update customer info
+      security: [{ bearerAuth: [] }]
       requestBody:
         required: true
         content:
           application/json:
-            example:
-              id: 1
-              name: "Jane Doe"
-              email: "jane@example.com"
-              phone: "312-555-2222"
-              car: "Toyota Corolla"
+            schema:
+              type: object
+              properties:
+                id: { type: integer, example: 1 }
+                phone: { type: string, example: "312-555-9999" }
+                car: { type: string, example: "Honda Accord" }
       responses:
-        200:
+        "200":
           description: Customer updated
 
   /customers/delete:
     delete:
       tags: [Customers]
-      summary: Delete a customer
+      summary: Delete customer by ID
+      security: [{ bearerAuth: [] }]
       requestBody:
         required: true
         content:
           application/json:
-            example:
-              id: 1
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id: { type: integer, example: 2 }
       responses:
-        200:
+        "200":
           description: Customer deleted
 
-  ###################
-  # MECHANICS
-  ###################
-  /mechanics/create:
+  # === INVENTORY ===
+  /inventory/create:
     post:
-      tags: [Mechanics]
-      summary: Register mechanic
+      tags: [Inventory]
+      summary: Add a new part to inventory
+      security: [{ bearerAuth: [] }]
       requestBody:
         required: true
         content:
           application/json:
-            example:
-              name: "Alex Rivera"
-              email: "alex@shop.com"
-              password: "password123"
-              specialty: "Brakes"
+            schema:
+              type: object
+              required: [name, price, quantity]
+              properties:
+                name: { type: string, example: "Brake Pads" }
+                price: { type: number, example: 49.99 }
+                quantity: { type: integer, example: 20 }
       responses:
-        201:
-          description: Mechanic created
-
-  /mechanics/login:
-    post:
-      tags: [Mechanics]
-      summary: Login mechanic
-      requestBody:
-        required: true
-        content:
-          application/json:
-            example:
-              email: "alex@shop.com"
-              password: "password123"
-      responses:
-        200:
-          description: JWT token returned
-
-  /mechanics/get_all:
-    post:
-      tags: [Mechanics]
-      summary: Get all mechanics
-      requestBody:
-        required: false
-        content:
-          application/json:
-            example:
-              filter: "optional"
-      responses:
-        200:
-          description: List of mechanics
-
-  /mechanics/get_one:
-    post:
-      tags: [Mechanics]
-      summary: Get one mechanic by ID
-      requestBody:
-        required: true
-        content:
-          application/json:
-            example:
-              id: 1
-      responses:
-        200:
-          description: Mechanic returned
-
-  /mechanics/update:
-    put:
-      tags: [Mechanics]
-      summary: Update mechanic
-      requestBody:
-        required: true
-        content:
-          application/json:
-            example:
-              id: 2
-              name: "Alex R."
-              specialty: "Engine Repair"
-              password: "newpass123"
-      responses:
-        200:
-          description: Mechanic updated
-
-  /mechanics/delete:
-    delete:
-      tags: [Mechanics]
-      summary: Delete mechanic
-      requestBody:
-        required: true
-        content:
-          application/json:
-            example:
-              id: 2
-      responses:
-        200:
-          description: Mechanic deleted
-
-  /mechanics/my_tickets:
-    post:
-      tags: [Mechanics]
-      summary: Get mechanic’s assigned tickets
-      requestBody:
-        required: false
-        content:
-          application/json:
-            example:
-              filter: "optional"
-      responses:
-        200:
-          description: List of tickets or message
-
-  /mechanics/top:
-    post:
-      tags: [Mechanics]
-      summary: Get top mechanic by ticket count
-      requestBody:
-        required: false
-        content:
-          application/json:
-            example:
-              filter: "optional"
-      responses:
-        200:
-          description: Returns top mechanic data
-
-  ###################
-  # PARTS (INVENTORY)
-  ###################
-  /parts/create:
-    post:
-      tags: [Parts]
-      summary: Create a new part
-      requestBody:
-        required: true
-        content:
-          application/json:
-            example:
-              name: "Oil Filter"
-              price: 9.99
-              quantity: 50
-      responses:
-        201:
+        "201":
           description: Part created
 
-  /parts/get_all:
+  /inventory/get_all:
     post:
-      tags: [Parts]
+      tags: [Inventory]
       summary: Get all parts
       requestBody:
         required: false
         content:
           application/json:
-            example:
-              filter: "optional"
+            schema:
+              type: object
+              example: {}
       responses:
-        200:
+        "200":
           description: List of parts
 
-  /parts/get_one:
+  /inventory/get_one:
     post:
-      tags: [Parts]
-      summary: Get a single part
+      tags: [Inventory]
+      summary: Get one part by ID
       requestBody:
         required: true
         content:
           application/json:
-            example:
-              id: 1
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id: { type: integer, example: 1 }
       responses:
-        200:
-          description: Part returned
+        "200":
+          description: Part details
 
-  /parts/update:
+  /inventory/update:
     put:
-      tags: [Parts]
-      summary: Update part
+      tags: [Inventory]
+      summary: Update inventory part
+      security: [{ bearerAuth: [] }]
       requestBody:
         required: true
         content:
           application/json:
-            example:
-              id: 1
-              name: "Premium Oil Filter"
-              price: 12.99
-              quantity: 75
+            schema:
+              type: object
+              properties:
+                id: { type: integer, example: 1 }
+                quantity: { type: integer, example: 25 }
       responses:
-        200:
+        "200":
           description: Part updated
 
-  /parts/delete:
+  /inventory/delete:
     delete:
-      tags: [Parts]
-      summary: Delete part
+      tags: [Inventory]
+      summary: Delete part from inventory
+      security: [{ bearerAuth: [] }]
       requestBody:
         required: true
         content:
           application/json:
-            example:
-              id: 1
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id: { type: integer, example: 3 }
       responses:
-        200:
+        "200":
           description: Part deleted
 
-  ###################
-  # SERVICE TICKETS
-  ###################
+  # === SERVICE TICKETS ===
   /service_tickets/create:
     post:
       tags: [Service Tickets]
       summary: Create a new service ticket
+      security: [{ bearerAuth: [] }]
       requestBody:
         required: true
         content:
           application/json:
-            example:
-              description: "Brake pad replacement"
-              status: "Open"
-              customer_id: 1
+            schema:
+              type: object
+              required: [description, status, customer_id]
+              properties:
+                description: { type: string, example: "Oil change" }
+                status: { type: string, example: "Open" }
+                customer_id: { type: integer, example: 1 }
       responses:
-        201:
+        "201":
           description: Ticket created
 
   /service_tickets/get_all:
     post:
       tags: [Service Tickets]
-      summary: Get all service tickets
+      summary: Get all tickets
+      security: [{ bearerAuth: [] }]
       requestBody:
         required: false
         content:
           application/json:
-            example:
-              filter: "optional"
+            schema:
+              type: object
+              example: {}
       responses:
-        200:
+        "200":
           description: List of tickets
 
   /service_tickets/get_one:
     post:
       tags: [Service Tickets]
-      summary: Get one ticket
+      summary: Get a ticket by ID
+      security: [{ bearerAuth: [] }]
       requestBody:
         required: true
         content:
           application/json:
-            example:
-              ticket_id: 1
+            schema:
+              type: object
+              required: [ticket_id]
+              properties:
+                ticket_id: { type: integer, example: 1 }
       responses:
-        200:
-          description: Single ticket returned
+        "200":
+          description: Ticket details
 
   /service_tickets/update:
     put:
       tags: [Service Tickets]
-      summary: Update a ticket
+      summary: Update a service ticket
+      security: [{ bearerAuth: [] }]
       requestBody:
         required: true
         content:
           application/json:
-            example:
-              ticket_id: 1
-              description: "Updated brake and rotor replacement"
-              status: "Closed"
+            schema:
+              type: object
+              required: [ticket_id]
+              properties:
+                ticket_id: { type: integer, example: 1 }
+                status: { type: string, example: "Closed" }
       responses:
-        200:
+        "200":
           description: Ticket updated
 
   /service_tickets/delete:
     delete:
       tags: [Service Tickets]
-      summary: Delete a ticket
+      summary: Delete service ticket
+      security: [{ bearerAuth: [] }]
       requestBody:
         required: true
         content:
           application/json:
-            example:
-              ticket_id: 1
+            schema:
+              type: object
+              required: [ticket_id]
+              properties:
+                ticket_id: { type: integer, example: 2 }
       responses:
-        200:
+        "200":
           description: Ticket deleted
 
   /service_tickets/assign:
     post:
       tags: [Service Tickets]
-      summary: Assign mechanic to a ticket
+      summary: Assign mechanic to ticket
+      security: [{ bearerAuth: [] }]
       requestBody:
         required: true
         content:
           application/json:
-            example:
-              ticket_id: 1
-              mech_id: 2
+            schema:
+              type: object
+              required: [ticket_id, mech_id]
+              properties:
+                ticket_id: { type: integer, example: 1 }
+                mech_id: { type: integer, example: 2 }
       responses:
-        200:
+        "200":
           description: Mechanic assigned
 
   /service_tickets/remove:
     post:
       tags: [Service Tickets]
       summary: Remove mechanic from ticket
+      security: [{ bearerAuth: [] }]
       requestBody:
         required: true
         content:
           application/json:
-            example:
-              ticket_id: 1
-              mech_id: 2
+            schema:
+              type: object
+              required: [ticket_id, mech_id]
+              properties:
+                ticket_id: { type: integer, example: 1 }
+                mech_id: { type: integer, example: 2 }
       responses:
-        200:
+        "200":
           description: Mechanic removed
 
   /service_tickets/add_parts:
     post:
       tags: [Service Tickets]
       summary: Add parts to ticket
+      security: [{ bearerAuth: [] }]
       requestBody:
         required: true
         content:
           application/json:
-            example:
-              ticket_id: 1
-              parts:
-                - part_id: 1
-                - part_id: 2
+            schema:
+              type: object
+              required: [ticket_id, parts]
+              properties:
+                ticket_id: { type: integer, example: 1 }
+                parts:
+                  type: array
+                  items:
+                    type: object
+                    required: [part_id]
+                    properties:
+                      part_id: { type: integer, example: 1 }
       responses:
-        201:
-          description: Parts added
+        "201":
+          description: Parts added to ticket
+
+  # === NEGATIVE TESTS ===
+  /negative/missing_token:
+    post:
+      tags: [Negative Tests]
+      summary: Attempt protected route without JWT
+      responses:
+        "401":
+          description: Unauthorized request
+
+  /negative/invalid_input:
+    post:
+      tags: [Negative Tests]
+      summary: Send bad data to trigger validation error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nonsense: { type: string, example: "garbage" }
+      responses:
+        "400":
+          description: Validation error triggered

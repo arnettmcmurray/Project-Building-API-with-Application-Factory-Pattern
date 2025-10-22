@@ -4,6 +4,7 @@ from flask_cors import CORS
 from flask_swagger_ui import get_swaggerui_blueprint
 from dotenv import load_dotenv
 
+# extensions imported from app/extensions.py
 from app.extensions import db, ma, migrate, limiter, cache
 from app.blueprints.mechanics import mechanics_bp
 from app.blueprints.service_tickets import service_tickets_bp
@@ -32,13 +33,19 @@ def create_app(config_obj=None):
     cfg = _pick_config()
     app.config.from_object(config_obj or cfg)
 
-    CORS(app, resources={r"/*": {"origins": ["*"]}}, expose_headers="Authorization")
-    print(f"[create_app] DB URI → {app.config['SQLALCHEMY_DATABASE_URI']}")
+    # === Render stability fix for Postgres ===
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_pre_ping": True,   # verifies connection before each use
+        "pool_recycle": 280,     # recycle connections ~5 min
+    }
 
-    # === Enable CORS and Swagger ===
-    CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+    # === Enable CORS globally ===
+    CORS(app, resources={r"/*": {"origins": ["*"]}}, expose_headers="Authorization")
+    print(f"[create_app] DB URI → {app.config.get('SQLALCHEMY_DATABASE_URI')}")
+
     app.config["JSONIFY_PRETTYPRINT_REGULAR"] = False
 
+    # === Swagger setup ===
     env = os.getenv("FLASK_ENV", "production").lower()
     api_url = (
         "http://127.0.0.1:5000/static/swagger.yaml"
@@ -105,10 +112,10 @@ def create_app(config_obj=None):
 
                 print("✅ Auto-seed complete — default data ready.")
 
-    # === Register blueprints ===
-    app.register_blueprint(mechanics_bp)
-    app.register_blueprint(service_tickets_bp)
-    app.register_blueprint(customers_bp)
+    # === Register blueprints (explicit prefixes for clarity) ===
+    app.register_blueprint(mechanics_bp, url_prefix="/mechanics")
+    app.register_blueprint(service_tickets_bp, url_prefix="/service_tickets")
+    app.register_blueprint(customers_bp, url_prefix="/customers")
     app.register_blueprint(inventory_bp, url_prefix="/inventory")
 
     # === Root route ===
