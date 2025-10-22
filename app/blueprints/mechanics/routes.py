@@ -1,5 +1,4 @@
 from flask import request, jsonify
-from . import mechanics_bp
 from app.extensions import db, limiter
 from app.models import Mechanic, ServiceTicket, ticket_mechanics
 from app.blueprints.mechanics.schemas import mechanic_schema, mechanics_schema, login_schema
@@ -7,29 +6,26 @@ from app.utils.auth import encode_token, token_required
 from marshmallow import ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func, desc
-
-# === Ping ===
-@mechanics_bp.route("/ping", methods=["GET"])
-def ping():
-    return jsonify({"ok": True}), 200
+from . import mechanics_bp
 
 
-# === Register Mechanic ===
-@mechanics_bp.route("", methods=["POST"])
+# === Register mechanic ===
+@mechanics_bp.route("/create", methods=["POST"])
 def create_mechanic():
+    data = request.get_json() or {}
     try:
-        mech = mechanic_schema.load(request.get_json() or {})
+        mech = mechanic_schema.load(data)
     except ValidationError as err:
-        return jsonify({"errors": err.messages}), 400
+        return jsonify({"error": "ValidationError", "details": err.messages}), 400
 
     try:
         db.session.add(mech)
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
-        return jsonify({"error": "Email already exists"}), 409
+        return jsonify({"error": "IntegrityError", "message": "Email already exists"}), 409
 
-    return jsonify(mechanic_schema.dump(mech)), 201
+    return jsonify({"message": "Mechanic created successfully", "mechanic": mechanic_schema.dump(mech)}), 201
 
 
 # === Login ===
@@ -39,57 +35,73 @@ def login():
     try:
         creds = login_schema.load(request.get_json() or {})
     except ValidationError as err:
-        return jsonify({"errors": err.messages}), 400
+        return jsonify({"error": "ValidationError", "details": err.messages}), 400
 
     mech = Mechanic.query.filter_by(email=creds["email"]).first()
     if mech and mech.check_password(creds["password"]):
         token = encode_token(mech.id, "mechanic")
         return jsonify({"message": "Login successful", "token": str(token)}), 200
+    return jsonify({"error": "InvalidCredentials", "message": "Invalid email or password"}), 401
 
-    return jsonify({"error": "Invalid email or password"}), 401
 
-
-# === Get Mechanics ===
-@mechanics_bp.route("", methods=["GET"])
+# === Get all mechanics ===
+@mechanics_bp.route("/get_all", methods=["POST"])
 @token_required
-def get_mechanics():
+def get_all_mechanics():
     mechs = Mechanic.query.all()
+    if not mechs:
+        return jsonify({"message": "No mechanics found"}), 200
     return jsonify(mechanics_schema.dump(mechs)), 200
 
 
-# === Update ===
-@mechanics_bp.route("/<int:id>", methods=["PUT"])
+# === Get one mechanic ===
+@mechanics_bp.route("/get_one", methods=["POST"])
 @token_required
-def update_mechanic(id):
-    if request.mechanic_id != id:
-        return jsonify({"error": "Forbidden"}), 403
-
-    mech = Mechanic.query.get_or_404(id)
+def get_one_mechanic():
     data = request.get_json() or {}
-    if "name" in data:
-        mech.name = data["name"]
-    if "specialty" in data:
-        mech.specialty = data["specialty"]
-    if "password" in data and data["password"]:
-        mech.set_password(data["password"])
-    db.session.commit()
+    mech_id = data.get("id")
+    if not mech_id:
+        return jsonify({"error": "Missing id"}), 400
+    mech = Mechanic.query.get_or_404(mech_id)
     return jsonify(mechanic_schema.dump(mech)), 200
 
 
-# === Delete ===
-@mechanics_bp.route("/<int:id>", methods=["DELETE"])
+# === Update mechanic ===
+@mechanics_bp.route("/update", methods=["PUT"])
 @token_required
-def delete_mechanic(id):
-    if request.mechanic_id != id:
-        return jsonify({"error": "Forbidden"}), 403
-    mech = Mechanic.query.get_or_404(id)
+def update_mechanic():
+    data = request.get_json() or {}
+    mech_id = data.get("id")
+    if not mech_id:
+        return jsonify({"error": "Missing id"}), 400
+
+    mech = Mechanic.query.get_or_404(mech_id)
+    for field in ("name", "specialty", "password"):
+        if field in data and data[field]:
+            if field == "password":
+                mech.set_password(data["password"])
+            else:
+                setattr(mech, field, data[field])
+    db.session.commit()
+    return jsonify({"message": "Mechanic updated", "mechanic": mechanic_schema.dump(mech)}), 200
+
+
+# === Delete mechanic ===
+@mechanics_bp.route("/delete", methods=["DELETE"])
+@token_required
+def delete_mechanic():
+    data = request.get_json() or {}
+    mech_id = data.get("id")
+    if not mech_id:
+        return jsonify({"error": "Missing id"}), 400
+    mech = Mechanic.query.get_or_404(mech_id)
     db.session.delete(mech)
     db.session.commit()
-    return jsonify({"message": f"Mechanic {id} deleted"}), 200
+    return jsonify({"message": f"Mechanic {mech_id} deleted"}), 200
 
 
-# === My Tickets ===
-@mechanics_bp.route("/my-tickets", methods=["GET"])
+# === My tickets ===
+@mechanics_bp.route("/my_tickets", methods=["POST"])
 @token_required
 def my_tickets():
     mech_id = request.mechanic_id
@@ -98,19 +110,20 @@ def my_tickets():
         .filter(ticket_mechanics.c.mechanic_id == mech_id)
         .all()
     )
-    return jsonify([
-        {
-            "id": t.id,
-            "description": t.description,
-            "status": t.status,
-            "date": t.date.isoformat(),
-            "customer_id": t.customer_id
-        } for t in tickets
-    ]), 200
+    if not tickets:
+        return jsonify({"message": "No tickets to show"}), 200
+    result = [{
+        "id": t.id,
+        "description": t.description,
+        "status": t.status,
+        "date": t.date.isoformat(),
+        "customer_id": t.customer_id
+    } for t in tickets]
+    return jsonify(result), 200
 
 
-# === Top Mechanic ===
-@mechanics_bp.route("/top", methods=["GET"])
+# === Top mechanic ===
+@mechanics_bp.route("/top", methods=["POST"])
 @token_required
 def top_mechanic():
     result = (

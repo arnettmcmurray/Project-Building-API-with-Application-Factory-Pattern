@@ -1,78 +1,132 @@
-# Mechanic Workshop API
+# 🧰 Mechanic Workshop API
 
-Flask backend for the **Mechanic Workshop** system — full CRUD web service with JWT authentication, Swagger documentation, and persistent seeding.  
-Manages **mechanics, customers, inventory, and service tickets**, and connects to a separate React frontend.
-
----
-
-## 🚀 Features
-
-- Flask + SQLAlchemy + Marshmallow + JWT
-- Auto-seeding for local dev (no more empty DB)
-- Swagger UI documentation (`/api/docs`)
-- Token-based auth for protected routes
-- Render deployment ready (PostgreSQL in production)
-- Compatible with `react-mechanic-api` frontend
+Flask-based backend for managing mechanics, customers, inventory (parts), and service tickets.  
+Now fully flattened — every endpoint uses raw JSON bodies instead of URL parameters.
 
 ---
 
-## ⚙️ Quickstart (Local Dev)
+## 🚀 Live Deployment
 
-```bash
-# 1. Clone repo
+**Render URL:**  
+[https://mechanics-api.onrender.com](https://mechanics-api.onrender.com)
+
+**Swagger Docs:**  
+[https://mechanics-api.onrender.com/api/docs](https://mechanics-api.onrender.com/api/docs)
+
+---
+
+## 🔄 October 2025 Update
+
+All API endpoints now accept **JSON input only**.  
+No path parameters, no text boxes — Swagger and Postman behave the same.
+
+### Example
+
+**Old:**  
+`PUT /service_tickets/1`
+
+**New:**  
+`PUT /service_tickets/update`
+
+**Body Example:**
+
+```json
+{
+  "ticket_id": 1,
+  "status": "Closed",
+  "description": "Updated brake and rotor replacement"
+}
+🧩 Features
+Mechanics can register, login, update, and view tickets.
+
+Customers can create, update, delete, and view profiles.
+
+Inventory (Parts) can be added, updated, or removed.
+
+Service tickets support create, update, assign mechanics, remove mechanics, and add parts.
+
+JWT authentication protects all key routes.
+
+Swagger UI for live JSON testing.
+
+Deployed with Render (PostgreSQL + Gunicorn).
+
+⚙️ Tech Stack
+Backend: Flask 3.x
+ORM: SQLAlchemy 2.x
+Serialization: Marshmallow 4.x
+Auth: JWT
+Docs: Swagger UI
+Rate Limiting: Flask-Limiter
+Deployment: Render
+Database: PostgreSQL
+
+🧰 Local Setup
+Clone repo
+
+bash
+Copy code
 git clone https://github.com/arnettmcmurray/mechanic-api.git
 cd mechanic-api
+Create and activate virtual environment
 
-# 2. Create and activate venv
+bash
+Copy code
 python -m venv venv
-source venv/bin/activate   # Mac / Linux
-# venv\Scripts\activate     # Windows
+source venv/bin/activate  # or venv\Scripts\activate on Windows
+Install dependencies
 
-# 3. Install dependencies
+bash
+Copy code
 pip install -r requirements.txt
+Set environment variables
+Create a .env file:
 
-# 4. (Optional) set environment
-export FLASK_ENV=development
+ini
+Copy code
+FLASK_APP=app
+FLASK_ENV=development
+DATABASE_URL=postgresql://user:password@localhost:5432/mechanic_db
+JWT_SECRET_KEY=supersecretkey
+Run the app
 
-# 5. Run Flask
-flask --app app run
-Then open:
-👉 http://127.0.0.1:5000/api/docs
+bash
+Copy code
+flask run
+Open Swagger Docs
+Visit http://127.0.0.1:5000/api/docs
 
-🔑 Default Logins (Auto-Seeded)
-Role	Email	Password
-Admin	admin@shop.com	admin123
-Mechanic	alex@shop.com	password123
+🧠 Example Workflows
+Create Mechanic
+POST /mechanics/create
 
-Use either to log in via /mechanics/login and get a JWT token for protected routes.
+json
+Copy code
+{
+  "name": "Alex Rivera",
+  "email": "alex@shop.com",
+  "password": "password123",
+  "specialty": "Brakes"
+}
+Assign Mechanic to Ticket
+POST /service_tickets/assign
 
-🗄️ Database
+json
+Copy code
+{
+  "ticket_id": 1,
+  "mech_id": 2
+}
+Add Parts to Ticket
+POST /service_tickets/add_parts
 
-Local: SQLite (instance/mechanic_shop.db)
-
-Production: PostgreSQL (Render)
-
-Auto-seed runs automatically for SQLite on first boot.
-Manual reseed (if needed):
-
-python -m app.dev.seed
-
-🌍 Deployment (Render)
-
-Backend: https://mechanics-api.onrender.com
-
-Swagger Docs: https://mechanics-api.onrender.com/api/docs
-
-Render redeploys automatically on each push to main.
-
-⚛️ Frontend Link
-
-Frontend repo: https://github.com/arnettmcmurray/react-mechanic-api
-
-Set the React .env:
-
-VITE_API_URL=https://mechanics-api.onrender.com
-
-
-Then run the React app and verify CRUD sync through your API.
+json
+Copy code
+{
+  "ticket_id": 1,
+  "parts": [
+    { "part_id": 1 },
+    { "part_id": 2 }
+  ]
+}
 ```

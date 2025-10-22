@@ -32,7 +32,7 @@ def create_app(config_obj=None):
     cfg = _pick_config()
     app.config.from_object(config_obj or cfg)
 
-    print(f"[create_app] FLASK_ENV={os.getenv('FLASK_ENV')}, using {cfg.__name__}")
+    CORS(app, resources={r"/*": {"origins": ["*"]}}, expose_headers="Authorization")
     print(f"[create_app] DB URI → {app.config['SQLALCHEMY_DATABASE_URI']}")
 
     # === Enable CORS and Swagger ===
