@@ -27,7 +27,7 @@ class ProductionConfig(Config):
     if uri and uri.startswith("postgres://"):
         uri = uri.replace("postgres://", "postgresql://", 1)
     if uri and "sslmode" not in uri and "sqlite" not in uri:
-        uri += "?sslmode=require"
+        uri = f"{uri}?sslmode=require"
 
     SQLALCHEMY_DATABASE_URI = uri or "sqlite:///mechanic_shop.db"
     RATELIMIT_STORAGE_URI = "memory://"
