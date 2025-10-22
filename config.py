@@ -25,6 +25,7 @@ class ProductionConfig(Config):
     if uri.startswith("postgres://"):
         uri = uri.replace("postgres://", "postgresql://", 1)
 
+    # Force SSL for Render Postgres
     if "sslmode" not in uri and "sqlite" not in uri:
         uri = f"{uri}?sslmode=require"
 
@@ -32,4 +33,5 @@ class ProductionConfig(Config):
     SQLALCHEMY_ENGINE_OPTIONS = {
         "connect_args": {"sslmode": "require"},
         "pool_pre_ping": True,
+        "pool_recycle": 300,
     }
