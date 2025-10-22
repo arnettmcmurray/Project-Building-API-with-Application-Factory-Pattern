@@ -17,5 +17,11 @@ config_class = config_map.get(env, ProductionConfig)
 
 app = create_app(config_class)
 
-# === Remove app.run(); Gunicorn handles this in Render ===
+# === Ensure tables exist (safe for local + Render) ===
+with app.app_context():
+    from app.extensions import db
+    db.create_all()
+    print("[DB] Tables ensured")
+
+# === No app.run(); Gunicorn handles this in Render ===
 # Local dev still works fine with: flask run

@@ -31,11 +31,13 @@ def create_app(config_name=None):
     }
     app.config.from_object(config_map.get(env, ProductionConfig))
 
-    # === Permanent CORS ===
+    # === Permanent CORS (for local + production) ===
     CORS(
         app,
         resources={r"/*": {"origins": [
             "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "http://127.0.0.1:5000",
             "https://mechanics-api.onrender.com"
         ]}},
         supports_credentials=True,
