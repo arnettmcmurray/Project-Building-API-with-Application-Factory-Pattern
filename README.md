@@ -130,3 +130,14 @@ Copy code
   ]
 }
 ```
+
+## Deployment Notes
+
+Render Environment Variables:
+
+- DATABASE_URL: postgresql://mechanic_db_hlrw_user:p9GXJpig6WrHW8j1NzQYfLilZt3LPRo8@dpg-d3ooheu3jp1c739kd210-a.oregon-postgres.render.com/mechanic_db_hlrw?sslmode=require
+- FLASK_ENV: production
+- JWT_SECRET_KEY: my-mechanics-secret-2025
+- SECRET_KEY: my-mechanics-secret-2025
+- RENDER_API_KEY: (GitHub secret)
+- RENDER_SERVICE_ID: (GitHub secret)
