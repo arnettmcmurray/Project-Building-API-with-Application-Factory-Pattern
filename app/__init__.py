@@ -1,8 +1,8 @@
-import os
 from flask import Flask
 from flask_cors import CORS
 from flask_swagger_ui import get_swaggerui_blueprint
 from dotenv import load_dotenv
+import os
 
 # === Extensions ===
 from app.extensions import db, ma, migrate, limiter, cache
@@ -14,102 +14,61 @@ from config import DevelopmentConfig, TestingConfig, ProductionConfig
 
 # === Load env ===
 load_dotenv()
-SWAGGER_URL = "/api/docs"
+
+SWAGGER_URL = '/api/docs'
+API_URL = '/static/swagger.yaml'
 
 
-def _pick_config():
+def create_app(config_name=None):
+    app = Flask(__name__)
+
+    # === Config selection ===
     env = os.getenv("FLASK_ENV", "production").lower()
-    return {
+    config_map = {
         "development": DevelopmentConfig,
         "testing": TestingConfig,
         "production": ProductionConfig,
-    }.get(env, ProductionConfig)
-
-
-def create_app(config_obj=None):
-    app = Flask(__name__, static_folder="static")
-    cfg = _pick_config()
-    app.config.from_object(config_obj or cfg)
-
-    # === SQLAlchemy engine ===
-    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-        "pool_pre_ping": True,
-        "pool_recycle": 280,
     }
+    app.config.from_object(config_map.get(env, ProductionConfig))
 
-    # === CORS (local + Render frontend) ===
-    CORS(app, origins=[
-        "http://localhost:5173",
-        "https://mechanics-api.onrender.com"
-    ])
-
-    # === Swagger ===
-    env = os.getenv("FLASK_ENV", "production").lower()
-    api_url = (
-        "http://127.0.0.1:5000/static/swagger.yaml"
-        if env == "development"
-        else "https://mechanics-api.onrender.com/static/swagger.yaml"
+    # === Permanent CORS ===
+    CORS(
+        app,
+        resources={r"/*": {"origins": [
+            "http://localhost:5173",
+            "https://mechanics-api.onrender.com"
+        ]}},
+        supports_credentials=True,
+        methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=[
+            "Content-Type",
+            "Authorization",
+            "Access-Control-Allow-Credentials"
+        ]
     )
 
+    # === Swagger setup ===
     swagger_bp = get_swaggerui_blueprint(
-        base_url=SWAGGER_URL,
-        api_url=api_url,
-        config={
-            "app_name": "Mechanic Workshop API",
-            "validatorUrl": None,
-            "persistAuthorization": True,
-        },
+        SWAGGER_URL,
+        API_URL,
+        config={'app_name': "Mechanic Workshop API"}
     )
     app.register_blueprint(swagger_bp, url_prefix=SWAGGER_URL)
 
-    # === Init extensions ===
+    # === Initialize extensions ===
     db.init_app(app)
     ma.init_app(app)
     migrate.init_app(app, db)
     limiter.init_app(app)
     cache.init_app(app)
 
-    # === Auto-seed only if local SQLite ===
-    with app.app_context():
-        uri = app.config.get("SQLALCHEMY_DATABASE_URI", "").lower()
-        if "sqlite" in uri:
-            db.create_all()
-            print("[DB] SQLite tables ensured")
-
-            from app.models import Mechanic
-            if not Mechanic.query.first():
-                from app.models import Customer, Inventory, ServiceTicket
-
-                admin = Mechanic(name="Admin User", email="admin@shop.com", specialty="Admin")
-                admin.set_password("admin123")
-                alex = Mechanic(name="Alex Rivera", email="alex@shop.com", specialty="Brakes")
-                alex.set_password("password123")
-                db.session.add_all([admin, alex])
-                db.session.commit()
-
-                john = Customer(name="John Doe", email="john@example.com", phone="312-555-1111", car="Honda Civic")
-                jane = Customer(name="Jane Smith", email="jane@example.com", phone="312-555-2222", car="Toyota Corolla")
-                db.session.add_all([john, jane])
-                db.session.commit()
-
-                brake = Inventory(name="Brake Pads", price=49.99, quantity=20)
-                oil = Inventory(name="Oil Filter", price=9.99, quantity=50)
-                db.session.add_all([brake, oil])
-                db.session.commit()
-
-                ticket1 = ServiceTicket(description="Brake pad replacement", status="Open", customer_id=john.id)
-                ticket2 = ServiceTicket(description="Oil change", status="Closed", customer_id=jane.id)
-                db.session.add_all([ticket1, ticket2])
-                db.session.commit()
-
-                print("✅ Auto-seed complete — default data ready.")
-
-    # === Blueprints ===
+    # === Register blueprints ===
     app.register_blueprint(mechanics_bp, url_prefix="/mechanics")
     app.register_blueprint(service_tickets_bp, url_prefix="/service_tickets")
     app.register_blueprint(customers_bp, url_prefix="/customers")
     app.register_blueprint(inventory_bp, url_prefix="/inventory")
 
+    # === Root ===
     @app.get("/")
     def root():
         return {
