@@ -40,7 +40,15 @@ def login():
     mech = Mechanic.query.filter_by(email=creds["email"]).first()
     if mech and mech.check_password(creds["password"]):
         token = encode_token(mech.id, "mechanic")
-        return jsonify({"message": "Login successful", "token": str(token)}), 200
+        return jsonify({
+        "message": "Login successful",
+        "token": str(token),
+        "id": mech.id,
+        "name": mech.name,
+        "email": mech.email,
+        "specialty": mech.specialty
+    }), 200
+
     return jsonify({"error": "InvalidCredentials", "message": "Invalid email or password"}), 401
 
 
