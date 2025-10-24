@@ -37,16 +37,14 @@ def create_app(config_name=None):
         resources={r"/*": {"origins": [
             "http://localhost:5173",
             "http://127.0.0.1:5173",
+            "http://localhost:5000",
             "http://127.0.0.1:5000",
+            "https://react-mechanic-api.onrender.com",
             "https://mechanics-api.onrender.com"
         ]}},
         supports_credentials=True,
         methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        allow_headers=[
-            "Content-Type",
-            "Authorization",
-            "Access-Control-Allow-Credentials"
-        ]
+        allow_headers=["Content-Type", "Authorization"]
     )
 
     # === Swagger setup ===
