@@ -31,7 +31,20 @@ def create_app(config_name=None):
     }
     app.config.from_object(config_map.get(env, ProductionConfig))
 
-    # === Permanent CORS (for local + production) ===
+    # === Initialize extensions early ===
+    db.init_app(app)
+    ma.init_app(app)
+    migrate.init_app(app, db)
+    limiter.init_app(app)
+    cache.init_app(app)
+
+    # === Register blueprints BEFORE CORS ===
+    app.register_blueprint(mechanics_bp, url_prefix="/mechanics")
+    app.register_blueprint(service_tickets_bp, url_prefix="/service_tickets")
+    app.register_blueprint(customers_bp, url_prefix="/customers")
+    app.register_blueprint(inventory_bp, url_prefix="/inventory")
+
+    # === Apply CORS after all routes exist ===
     CORS(
         app,
         resources={r"/*": {"origins": [
@@ -43,8 +56,9 @@ def create_app(config_name=None):
             "https://mechanics-api.onrender.com"
         ]}},
         supports_credentials=True,
-        methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        allow_headers=["Content-Type", "Authorization"]
+        expose_headers=["Content-Type", "Authorization"],
+        allow_headers=["Content-Type", "Authorization"],
+        methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
     )
 
     # === Swagger setup ===
@@ -54,19 +68,6 @@ def create_app(config_name=None):
         config={'app_name': "Mechanic Workshop API"}
     )
     app.register_blueprint(swagger_bp, url_prefix=SWAGGER_URL)
-
-    # === Initialize extensions ===
-    db.init_app(app)
-    ma.init_app(app)
-    migrate.init_app(app, db)
-    limiter.init_app(app)
-    cache.init_app(app)
-
-    # === Register blueprints ===
-    app.register_blueprint(mechanics_bp, url_prefix="/mechanics")
-    app.register_blueprint(service_tickets_bp, url_prefix="/service_tickets")
-    app.register_blueprint(customers_bp, url_prefix="/customers")
-    app.register_blueprint(inventory_bp, url_prefix="/inventory")
 
     # === Root ===
     @app.get("/")
